@@ -1,20 +1,8 @@
-# MineCS Client - rd-132211
+# MineCS Client
 
-This is the MCCS Team's port of Minecraft version rd-132211.
+This is the MCCS Team's port of Minecraft.
 
-## Version Changelog
-
-Taken from the [Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-132211)
-
-### Additions
-
-+ Blocks: Air, Grass, and Stone
-+ Player
-+ Chunks
-+ Lighting
-+ Creative Mode / Placing and Breaking Blocks
-+ Respawning using `R`
-+ Saving using `Enter` or upon closing
+### Currently Porting: [rd-132328](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-132328)
 
 ## Credits
 
