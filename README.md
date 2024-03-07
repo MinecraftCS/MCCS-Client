@@ -2,6 +2,19 @@
 
 This is the MCCS Team's port of Minecraft version rd-132211.
 
+## Version Changelog
+
+Taken from the [Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-132211)
+
+### Additions
+
++ Blocks: Air, Grass, and Stone
++ Player
++ Chunks
++ Lighting
++ Creative Mode / Placing and Breaking Blocks
++ Respawning using `R`
++ Saving using `Enter` or upon closing
 
 ## Credits
 
