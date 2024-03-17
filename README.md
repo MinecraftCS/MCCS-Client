@@ -1,8 +1,14 @@
-# MineCS Client
+# MineCS Client - rd-132328
 
-This is the MCCS Team's port of Minecraft.
+This is the MCCS Team's port of Minecraft version rd-132328.
 
-### Currently Porting: [rd-132328](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-132328)
+## Version Changelog
+
+Taken from the [Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-132328)
+
+### Additions
+
++ Mob/Zombie
 
 ## Credits
 
