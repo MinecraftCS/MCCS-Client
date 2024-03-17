@@ -1,4 +1,5 @@
-﻿using MineCS.rubydung.level;
+﻿using MineCS.rubydung.character;
+using MineCS.rubydung.level;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -16,6 +17,7 @@ namespace MineCS.rubydung
         private Level level;
         private LevelRenderer levelRenderer;
         private Player player;
+        private List<Zombie> zombies = new List<Zombie>();
         private int[] viewportBuffer = new int[16];
         private int[] selectBuffer = new int[2000];
         private int selectBufferIndex = 0;
@@ -61,6 +63,8 @@ namespace MineCS.rubydung
             player = new Player(level);
             Input.Initialize(this);
             CursorVisible = false;
+            for (int i = 0; i < 100; i++)
+                zombies.Add(new Zombie(level, 128.0f, 0.0f, 128.0f));
         }
 
         public void destroy()
@@ -104,6 +108,8 @@ namespace MineCS.rubydung
 
         public void tick()
         {
+            for (int i = 0; i < zombies.Count; i++)
+                zombies[i].tick();
             player.tick();
             Input.UpdateInput();
         }
@@ -111,8 +117,8 @@ namespace MineCS.rubydung
         private void moveCameraToPlayer(float a)
         {
             GL.Translate(0.0f, 0.0f, -0.3f);
-            GL.Rotate(player.xRot, 1.0f, 0.0f, 0.0f);
-            GL.Rotate(player.yRot, 0.0f, 1.0f, 0.0f);
+            GL.Rotate(player.yRot, 1.0f, 0.0f, 0.0f);
+            GL.Rotate(player.xRot, 0.0f, 1.0f, 0.0f);
             float x = player.xo + (player.x - player.xo) * a;
             float y = player.yo + (player.y - player.yo) * a;
             float z = player.zo + (player.z - player.zo) * a;
@@ -217,6 +223,8 @@ namespace MineCS.rubydung
             GL.Fog(FogParameter.FogColor, fogColor);
             GL.Disable(EnableCap.Fog);
             levelRenderer.render(player, 0);
+            for (int i = 0; i < zombies.Count; i++)
+                zombies[i].render(a);
             GL.Enable(EnableCap.Fog);
             levelRenderer.render(player, 1);
             GL.Disable(EnableCap.Texture2D);

@@ -7,18 +7,14 @@ namespace MineCS.rubydung.level
     {
         public AABB aabb;
         public Level level;
-
         public int x0;
         public int y0;
         public int z0;
-
         public int x1;
         public int y1;
         public int z1;
-
         private bool dirty = true;
         private int lists = -1;
-        private static int texture = Textures.loadTexture("terrain.png", 9728);
         private static Tesselator t = new Tesselator();
         public static int rebuiltThisFrame = 0;
         public static int updates = 0;
@@ -43,17 +39,20 @@ namespace MineCS.rubydung.level
             dirty = false;
             updates++;
             rebuiltThisFrame++;
+            int texture = Textures.loadTexture("/terrain.png", 9728);
             GL.NewList(lists + layer, ListMode.Compile);
             GL.Enable(EnableCap.Texture2D);
             GL.BindTexture(TextureTarget.Texture2D, texture);
             t.init();
+            int tiles = 0;
             for (int x = x0; x < x1; x++)
                 for (int y = y0; y < y1; y++)
                     for (int z = z0; z < z1; z++)
                         if (level.isTile(x, y, z))
                         {
-                            int tex = (y == level.depth * 2 / 3) ? 0 : 1;
-                            if (tex == 0)
+                            bool tex = y == level.depth * 2 / 3;
+                            tiles++;
+                            if (tex)
                                 Tile.rock.render(t, level, layer, x, y, z);
                             else
                                 Tile.grass.render(t, level, layer, x, y, z);

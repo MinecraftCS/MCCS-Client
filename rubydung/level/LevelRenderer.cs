@@ -8,16 +8,13 @@ namespace MineCS.rubydung.level
         private static int CHUNK_SIZE = 16;
         private Level level;
         private Chunk[] chunks;
-
         private int xChunks;
         private int yChunks;
         private int zChunks;
-
-        Tesselator tes;
+        Tesselator t = new Tesselator();
 
         public LevelRenderer(Level level)
         {
-            tes = new Tesselator();
             this.level = level;
             level.addListener(this);
             xChunks = level.width / 16;
@@ -44,7 +41,7 @@ namespace MineCS.rubydung.level
                     }
         }
 
-        public void render(Player player, int layer)
+        public void render(Entity player, int layer)
         {
             Chunk.rebuiltThisFrame = 0;
             Frustum frustum = Frustum.getFrustum();
@@ -55,7 +52,7 @@ namespace MineCS.rubydung.level
             }
         }
 
-        public void pick(Player player)
+        public void pick(Entity player)
         {
             float reach = 3.0f;
             AABB box = player.bb.grow(reach, reach, reach);
@@ -81,9 +78,9 @@ namespace MineCS.rubydung.level
                             for (int i = 0; i < 6; i++)
                             {
                                 GL.PushName(i);
-                                tes.init();
-                                Tile.rock.renderFace(tes, x, y, z, i);
-                                tes.flush();
+                                t.init();
+                                Tile.rock.renderFace(t, x, y, z, i);
+                                t.flush();
                                 GL.PopName();
                             }
                             GL.PopName();
@@ -100,10 +97,10 @@ namespace MineCS.rubydung.level
         {
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
-            GL.Color4(1.0f, 1.0f, 1.0f, (float)Math.Sin(DateTime.UtcNow.Millisecond / 100.0D) * 0.2f + 0.4f);
-            tes.init();
-            Tile.rock.renderFace(tes, h.x, h.y, h.z, h.f);
-            tes.flush();
+            GL.Color4(1.0f, 1.0f, 1.0f, (float)Math.Sin(DateTime.UtcNow.Millisecond / 100.0) * 0.2f + 0.4f);
+            t.init();
+            Tile.rock.renderFace(t, h.x, h.y, h.z, h.f);
+            t.flush();
             GL.Disable(EnableCap.Blend);
         }
 
