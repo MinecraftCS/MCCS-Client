@@ -1,13 +1,13 @@
 ﻿namespace MineCS.mccs.level
 {
-    public class PerlinNoiseFilter
+    public class NoiseMap
     {
         Random random = new Random();
         int seed;
         int levels = 0;
         int fuzz = 16;
 
-        public PerlinNoiseFilter(int levels)
+        public NoiseMap(int levels)
         {
             seed = random.Next();
             this.levels = levels;

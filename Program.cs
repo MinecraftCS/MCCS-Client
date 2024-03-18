@@ -15,7 +15,7 @@ namespace MineCS
                 Directory.SetCurrentDirectory(pathToContentRoot);
             }
 
-            using (Client game = new Client())
+            using (Client game = new Client(854, 480, false))
                 game.Run();
         }
     }

@@ -1,4 +1,5 @@
 ﻿using MineCS.mccs.level;
+using MineCS.mccs.renderer;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.character
@@ -10,12 +11,14 @@ namespace MineCS.mccs.character
         public float speed;
         public float rotA;
         private static ZombieModel zombieModel = new ZombieModel();
+        private Textures textures;
 
-        public Zombie(Level level, float x, float y, float z) : base(level)
+        public Zombie(Level level, Textures textures, float x, float y, float z) : base(level)
         {
             Random rand = new Random();
+            this.textures = textures;
             setPos(x, y, z);
-            timeOffs = rand.NextSingle() * 1239813.0f;
+            timeOffs = rand.NextSingle() * 1239813.0f;  
             rot = (float)(rand.NextSingle() * Math.PI * 2.0);
             speed = 1.0f;
             rotA = (float)(rand.NextSingle() + 1.0) * 0.01f;
@@ -50,10 +53,10 @@ namespace MineCS.mccs.character
             }
         }
 
-        public void render(float a)
+        public override void render(float a)
         {
             GL.Enable(EnableCap.Texture2D);
-            GL.BindTexture(TextureTarget.Texture2D, Textures.loadTexture("/char.png", 9728));
+            GL.BindTexture(TextureTarget.Texture2D, textures.loadTexture("/char.png", 9728));
             GL.PushMatrix();
             double time = (DateTime.UtcNow.TimeOfDay.TotalMilliseconds * 1000000.0) / 1.0E9 * 10.0 * speed + timeOffs;
             float size = 0.058333334f;

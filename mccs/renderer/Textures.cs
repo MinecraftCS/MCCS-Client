@@ -5,13 +5,13 @@ using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
-namespace MineCS.mccs
+namespace MineCS.mccs.renderer
 {
     public class Textures
     {
-        private static Dictionary<string, int> idMap = new Dictionary<string, int>();
+        private Dictionary<string, int> idMap = new Dictionary<string, int>();
 
-        public static int loadTexture(string resourceName, int mode)
+        public int loadTexture(string resourceName, int mode)
         {
             if (idMap.ContainsKey(resourceName))
                 return idMap[resourceName];

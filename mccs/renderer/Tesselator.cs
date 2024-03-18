@@ -1,6 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mccs.level
+namespace MineCS.mccs.renderer
 {
     public class Tesselator
     {
@@ -18,32 +18,36 @@ namespace MineCS.mccs.level
         private bool hasTexture = false;
         private int len = 3;
         private int p = 0;
+        private bool noColor = false;
         public static Tesselator instance = new Tesselator();
 
         public void flush()
         {
-            Array.Resize(ref buffer, p);
-            Array.Copy(array, 0, buffer, 0, p);
-            if (hasTexture && hasColor)
-                GL.InterleavedArrays(InterleavedArrayFormat.T2fC3fV3f, 0, buffer);
-            else if (hasTexture)
-                GL.InterleavedArrays(InterleavedArrayFormat.T2fV3f, 0, buffer);
-            else if (hasColor)
-                GL.InterleavedArrays(InterleavedArrayFormat.C3fV3f, 0, buffer);
-            else
-                GL.InterleavedArrays(InterleavedArrayFormat.V3f, 0, buffer);
+            if (vertices > 0)
+            {
+                Array.Resize(ref buffer, p);
+                Array.Copy(array, 0, buffer, 0, p);
+                if (hasTexture && hasColor)
+                    GL.InterleavedArrays(InterleavedArrayFormat.T2fC3fV3f, 0, buffer);
+                else if (hasTexture)
+                    GL.InterleavedArrays(InterleavedArrayFormat.T2fV3f, 0, buffer);
+                else if (hasColor)
+                    GL.InterleavedArrays(InterleavedArrayFormat.C3fV3f, 0, buffer);
+                else
+                    GL.InterleavedArrays(InterleavedArrayFormat.V3f, 0, buffer);
 
-            GL.EnableClientState(ArrayCap.VertexArray);
-            if (hasTexture)
-                GL.EnableClientState(ArrayCap.TextureCoordArray);
-            if (hasColor)
-                GL.EnableClientState(ArrayCap.ColorArray);
-            GL.DrawArrays(PrimitiveType.Quads, 0, vertices);
-            GL.DisableClientState(ArrayCap.VertexArray);
-            if (hasTexture)
-                GL.DisableClientState(ArrayCap.TextureCoordArray);
-            if (hasColor)
-                GL.DisableClientState(ArrayCap.ColorArray);
+                GL.EnableClientState(ArrayCap.VertexArray);
+                if (hasTexture)
+                    GL.EnableClientState(ArrayCap.TextureCoordArray);
+                if (hasColor)
+                    GL.EnableClientState(ArrayCap.ColorArray);
+                GL.DrawArrays(PrimitiveType.Quads, 0, vertices);
+                GL.DisableClientState(ArrayCap.VertexArray);
+                if (hasTexture)
+                    GL.DisableClientState(ArrayCap.TextureCoordArray);
+                if (hasColor)
+                    GL.DisableClientState(ArrayCap.ColorArray);
+            }
             clear();
         }
 
@@ -59,6 +63,7 @@ namespace MineCS.mccs.level
             clear();
             hasColor = false;
             hasTexture = false;
+            noColor = false;
         }
 
         public void tex(float u, float v)
@@ -68,10 +73,11 @@ namespace MineCS.mccs.level
             hasTexture = true;
             this.u = u;
             this.v = v;
-		}
+        }
 
-		public void color(float r, float g, float b)
+        public void color(float r, float g, float b)
         {
+            if (noColor) return;
             if (!hasColor)
                 len += 3;
             hasColor = true;
@@ -103,8 +109,21 @@ namespace MineCS.mccs.level
             array[p++] = y;
             array[p++] = z;
             vertices++;
-            if (p >= MAX_FLOATS - len)
+            if (vertices % 4 == 0 && p >= MAX_FLOATS - len * 4)
                 flush();
+        }
+
+        public void color(int c)
+        {
+            float r = (c >> 16 & 0xFF) / 255.0f;
+            float g = (c >> 8 & 0xFF) / 255.0f;
+            float b = (c & 0xFF) / 255.0f;
+            color(r, g, b);
+        }
+
+        public void NoColor()
+        {
+            noColor = true;
         }
     }
 }

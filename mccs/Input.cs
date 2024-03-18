@@ -11,10 +11,11 @@ namespace MineCS.mccs
         private static List<MouseButton> buttonsDown;
         private static List<MouseButton> buttonsDownLast;
         private static int scrollWheel;
-        private static Vector2 mouseCenter;
         private static Vector2 oldMouseDelta;
+        private static bool grabFix = false;
         public static Vector2 MousePos;
         public static Vector2 MouseDelta;
+        public static bool initialized = false;
 
         public static void Initialize(Client game)
         {
@@ -24,22 +25,26 @@ namespace MineCS.mccs
             buttonsDown = new List<MouseButton>();
             buttonsDownLast = new List<MouseButton>();
 
-            var rect = game.Bounds;
-            mouseCenter = new Vector2(rect.Left + rect.Width / 2, rect.Bottom - rect.Height / 2);
-
             game.KeyDown += Game_KeyDown;
             game.KeyUp += Game_KeyUp;
             game.MouseDown += Game_MouseDown;
             game.MouseUp += Game_MouseUp;
             game.MouseMove += (o, e) =>
             {
-                if (client.Focused)
+                if (Client.mouseGrabbed)
                 {
+                    if (grabFix)
+                    {
+                        grabFix = false;
+                        return;
+                    }
                     MouseDelta.X = e.XDelta + oldMouseDelta.X;
                     MouseDelta.Y = e.YDelta + oldMouseDelta.Y;
                 }
             };
             game.MouseWheel += Game_MouseWheel;
+
+            initialized = true;
         }
 
         private static void Game_MouseWheel(object? sender, MouseWheelEventArgs e)
@@ -71,8 +76,10 @@ namespace MineCS.mccs
 
         public static void UpdateInput()
         {
-            if (keysDown == null) return;
+            if (keysDown == null || buttonsDown == null) return;
             keysDownLast = new List<Key>(keysDown);
+            buttonsDownLast = new List<MouseButton>(buttonsDown);
+            scrollWheel = 0;
         }
 
         public static void UpdateCursor()
@@ -85,18 +92,27 @@ namespace MineCS.mccs
             oldMouseDelta.X = Mouse.GetCursorState().X - mouseCenter.X;
             oldMouseDelta.Y = Mouse.GetCursorState().Y - mouseCenter.Y;
 
-            client.CursorVisible = !client.Focused;
-            if (client.Focused)
+            client.CursorVisible = !Client.mouseGrabbed;
+            if (Client.mouseGrabbed)
                 Mouse.SetPosition(mouseCenter.X, mouseCenter.Y);
 
             MousePos.X = Mouse.GetCursorState().X - rect.Left;
             MousePos.Y = rect.Height - (Mouse.GetCursorState().Y - rect.Top);
-
-            if (buttonsDown == null) return;
-            buttonsDownLast = new List<MouseButton>(buttonsDown);
-            scrollWheel = 0;
         }
 
+        public static void GrabFix()
+        {
+            var rect = client.Bounds;
+            var mouseCenter = new Vector2(rect.Left + rect.Width / 2, rect.Bottom - rect.Height / 2);
+
+            MouseDelta.X = 0;
+            MouseDelta.Y = 0;
+            oldMouseDelta.X = 0;
+            oldMouseDelta.Y = 0;
+            grabFix = true;
+            client.CursorVisible = !Client.mouseGrabbed;
+            Mouse.SetPosition(mouseCenter.X, mouseCenter.Y);
+        }
 
         public static Key? GetKey() => keysDown.Count > 0 ? (keysDownLast.Contains(keysDown.Last()) ? null : keysDown.Last()) : null;
         public static bool KeyPress(Key key) => keysDown.Contains(key) && !keysDownLast.Contains(key);

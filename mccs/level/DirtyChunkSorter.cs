@@ -1,4 +1,6 @@
-﻿namespace MineCS.mccs.level
+﻿using MineCS.mccs.renderer;
+
+namespace MineCS.mccs.level
 {
     public class DirtyChunkSorter : IComparer<Chunk>
     {

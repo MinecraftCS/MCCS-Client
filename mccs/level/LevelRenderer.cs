@@ -1,5 +1,6 @@
 ﻿using MineCS.mccs.level.tile;
 using MineCS.mccs.phys;
+using MineCS.mccs.renderer;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.level
@@ -13,10 +14,12 @@ namespace MineCS.mccs.level
         private int xChunks;
         private int yChunks;
         private int zChunks;
+        private Textures textures;
 
-        public LevelRenderer(Level level)
+        public LevelRenderer(Level level, Textures textures)
         {
             this.level = level;
+            this.textures = textures;
             level.addListener(this);
             xChunks = level.width / 16;
             yChunks = level.depth / 16;
@@ -61,7 +64,7 @@ namespace MineCS.mccs.level
         public void render(Entity player, int layer)
         {
             GL.Enable(EnableCap.Texture2D);
-            int id = Textures.loadTexture("/terrain.png", 9728);
+            int id = textures.loadTexture("/terrain.png", 9728);
             GL.BindTexture(TextureTarget.Texture2D, id);
             Frustum frustum = Frustum.getFrustum();
             for (int i = 0; i < chunks.Length; i++)
@@ -128,7 +131,7 @@ namespace MineCS.mccs.level
             GL.PopName();
         }
 
-        public void renderHit(HitResult h)
+        public void renderHit(HitResult h, int mode, int tileType)
         {
             Tesselator t = Tesselator.instance;
             GL.Enable(EnableCap.Blend);
@@ -137,6 +140,43 @@ namespace MineCS.mccs.level
             t.init();
             Tile.rock.renderFaceNoTexture(t, h.x, h.y, h.z, h.f);
             t.flush();
+            if (mode == 0)
+            {
+                t.init();
+                for (int i = 0; i < 6; i++)
+                    Tile.rock.renderFaceNoTexture(t, h.x, h.y, h.z, i);
+                t.flush();
+            }
+            else
+            {
+                GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+                float br = (float)Math.Sin(DateTime.UtcNow.Millisecond / 100.0) * 0.2f + 0.8f;
+                GL.Color4(br, br, br, Math.Sin(DateTime.UtcNow.Millisecond / 200.0) * 0.2f + 0.5f);
+                GL.Enable(EnableCap.Texture2D);
+                int id = textures.loadTexture("/terrain.png", 9728);
+                GL.BindTexture(TextureTarget.Texture2D, id);
+                int x = h.x;
+                int y = h.y;
+                int z = h.z;
+                if (h.f == 0)
+                    y--;
+                if (h.f == 1)
+                    y++;
+                if (h.f == 2)
+                    z--;
+                if (h.f == 3)
+                    z++;
+                if (h.f == 4)
+                    x--;
+                if (h.f == 5)
+                    x++;
+                t.init();
+                t.NoColor();
+                Tile.tiles[tileType].render(t, level, 0, x, y, z);
+                Tile.tiles[tileType].render(t, level, 1, x, y, z);
+                t.flush();
+                GL.Disable(EnableCap.Texture2D);
+            }
             GL.Disable(EnableCap.Blend);
         }
 

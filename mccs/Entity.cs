@@ -126,5 +126,7 @@ namespace MineCS.mccs
             int zTile = (int)z;
             return level.isLit(xTile, yTile, zTile);
         }
+
+        public virtual void render(float a) {}
     }
 }

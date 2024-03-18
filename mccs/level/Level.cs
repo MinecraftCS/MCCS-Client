@@ -25,47 +25,8 @@ namespace MineCS.mccs.level
             lightDepths = new int[w * h];
             bool mapLoaded = load();
             if (!mapLoaded)
-                generateMap();
+                blocks = new LevelGen(w, h, d).generateMap();
             calcLightDepths(0, 0, w, h);
-        }
-
-        private void generateMap()
-        {
-            int w = width;
-            int h = height;
-            int d = depth;
-            int[] heightmap1 = new PerlinNoiseFilter(0).read(w, h);
-            int[] heightmap2 = new PerlinNoiseFilter(0).read(w, h);
-            int[] cf = new PerlinNoiseFilter(1).read(w, h);
-            int[] rockmap = new PerlinNoiseFilter(1).read(w, h);
-            for (int x = 0; x < w; x++)
-                for (int y = 0; y < d; y++)
-                    for (int z = 0; z < h; z++)
-                    {
-                        int dh;
-                        int dh1 = heightmap1[x + z * width];
-                        int dh2 = heightmap2[x + z * width];
-                        int cfh = cf[x + z * width];
-                        if (cfh < 128)
-                            dh2 = dh1;
-                        if (dh2 > (dh = dh1))
-                            dh = dh2;
-                        else
-                            dh2 = dh1;
-                        dh = dh / 8 + d / 3;
-                        int rh = rockmap[x + z * width] / 8 + d / 3;
-                        if (rh > dh - 2)
-                            rh = dh - 2;
-                        int i = (y * height + z) * width + x;
-                        int id = 0;
-                        if (y == dh)
-                            id = Tile.grass.id;
-                        if (y < dh)
-                            id = Tile.dirt.id;
-                        if (y <= rh)
-                            id = Tile.rock.id;
-                        blocks[i] = (byte)id;
-                    }
         }
 
         public bool load()

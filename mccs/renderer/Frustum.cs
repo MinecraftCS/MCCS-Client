@@ -1,7 +1,7 @@
 ﻿using MineCS.mccs.phys;
 using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mccs.level
+namespace MineCS.mccs.renderer
 {
     public class Frustum
     {
@@ -25,7 +25,7 @@ namespace MineCS.mccs.level
 
         private void normalizePlane(float[][] frustum, int side)
         {
-            float magnitude = (float)Math.Sqrt((frustum[side][0] * frustum[side][0] + frustum[side][1] * frustum[side][1] + frustum[side][2] * frustum[side][2]));
+            float magnitude = (float)Math.Sqrt(frustum[side][0] * frustum[side][0] + frustum[side][1] * frustum[side][1] + frustum[side][2] * frustum[side][2]);
             frustum[side][0] = frustum[side][0] / magnitude;
             frustum[side][1] = frustum[side][1] / magnitude;
             frustum[side][2] = frustum[side][2] / magnitude;
