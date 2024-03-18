@@ -1,4 +1,4 @@
-﻿namespace MineCS.mc.level
+﻿namespace MineCS.mccs.level
 {
     public class Tile
     {

@@ -1,7 +1,7 @@
-﻿using MineCS.mc.physics;
+﻿using MineCS.mccs.physics;
 using System.IO.Compression;
 
-namespace MineCS.mc.level
+namespace MineCS.mccs.level
 {
     public class Level
     {

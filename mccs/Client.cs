@@ -1,12 +1,12 @@
-﻿using MineCS.mc.character;
-using MineCS.mc.level;
+﻿using MineCS.mccs.character;
+using MineCS.mccs.level;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System.Diagnostics;
 
-namespace MineCS.mc
+namespace MineCS.mccs
 {
     public class Client : GameWindow
     {

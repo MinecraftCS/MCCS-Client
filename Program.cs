@@ -1,4 +1,4 @@
-﻿using MineCS.mc;
+﻿using MineCS.mccs;
 using System.Diagnostics;
 
 namespace MineCS
