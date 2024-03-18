@@ -1,4 +1,4 @@
-﻿namespace MineCS.mc.character
+﻿namespace MineCS.rubydung.character
 {
     public class Vertex
     {

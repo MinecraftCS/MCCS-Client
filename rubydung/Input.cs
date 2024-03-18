@@ -1,11 +1,11 @@
 ﻿using OpenTK;
 using OpenTK.Input;
 
-namespace MineCS.mc
+namespace MineCS.rubydung
 {
     public class Input
     {
-        private static Client rdGame;
+        private static RubyDung rdGame;
         private static List<Key> keysDown;
         private static List<Key> keysDownLast;
         private static List<MouseButton> buttonsDown;
@@ -16,7 +16,7 @@ namespace MineCS.mc
         public static Vector2 MousePos;
         public static Vector2 MouseDelta;
 
-        public static void Initialize(Client game)
+        public static void Initialize(RubyDung game)
         {
             rdGame = game;
             keysDown = new List<Key>();

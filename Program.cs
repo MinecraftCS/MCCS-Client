@@ -1,4 +1,4 @@
-﻿using MineCS.mc;
+﻿using MineCS.rubydung;
 using System.Diagnostics;
 
 namespace MineCS
@@ -15,7 +15,7 @@ namespace MineCS
                 Directory.SetCurrentDirectory(pathToContentRoot);
             }
 
-            using (Client game = new Client())
+            using (RubyDung game = new RubyDung())
                 game.Run();
         }
     }

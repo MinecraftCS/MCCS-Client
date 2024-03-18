@@ -1,13 +1,11 @@
-﻿namespace MineCS.mc.physics
+﻿namespace MineCS.rubydung.physics
 {
     public class AABB
     {
-        private float epsilon = 0.0F;
-
+        private float epsilon = 0.0f;
         public float x0;
         public float y0;
         public float z0;
-
         public float x1;
         public float y1;
         public float z1;
@@ -62,18 +60,11 @@
                 return xa;
             if (c.z1 <= z0 || c.z0 >= z1)
                 return xa;
-            if (xa > 0.0F && c.x1 <= x0)
-            {
-                float max = x0 - c.x1 - epsilon;
-                if (max < xa)
-                    xa = max;
-            }
-            if (xa < 0.0F && c.x0 >= x1)
-            {
-                float max = x1 - c.x0 + epsilon;
-                if (max > xa)
-                    xa = max;
-            }
+            float max;
+            if (xa > 0.0f && c.x1 <= x0 && (max = x0 - c.x1 - epsilon) < xa)
+                xa = max;
+            if (xa < 0.0f && c.x0 >= x1 && (max = x1 - c.x0 + epsilon) > xa)
+                xa = max;
             return xa;
         }
 
@@ -83,18 +74,11 @@
                 return ya;
             if (c.z1 <= z0 || c.z0 >= z1)
                 return ya;
-            if (ya > 0.0F && c.y1 <= y0)
-            {
-                float max = y0 - c.y1 - epsilon;
-                if (max < ya)
-                    ya = max;
-            }
-            if (ya < 0.0F && c.y0 >= y1)
-            {
-                float max = y1 - c.y0 + epsilon;
-                if (max > ya)
-                    ya = max;
-            }
+            float max;
+            if (ya > 0.0f && c.y1 <= y0 && (max = y0 - c.y1 - epsilon) < ya)
+                ya = max;
+            if (ya < 0.0f && c.y0 >= y1 && (max = y1 - c.y0 + epsilon) > ya)
+                ya = max;
             return ya;
         }
 
@@ -104,18 +88,11 @@
                 return za;
             if (c.y1 <= y0 || c.y0 >= y1)
                 return za;
-            if (za > 0.0F && c.z1 <= z0)
-            {
-                float max = z0 - c.z1 - epsilon;
-                if (max < za)
-                    za = max;
-            }
-            if (za < 0.0F && c.z0 >= z1)
-            {
-                float max = z1 - c.z0 + epsilon;
-                if (max > za)
-                    za = max;
-            }
+            float max;
+            if (za > 0.0f && c.z1 <= z0 && (max = z0 - c.z1 - epsilon) < za)
+                za = max;
+            if (za < 0.0f && c.z0 >= z1 && (max = z1 - c.z0 + epsilon) > za)
+                za = max;
             return za;
         }
 

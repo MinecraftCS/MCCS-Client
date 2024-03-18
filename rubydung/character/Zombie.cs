@@ -1,7 +1,7 @@
-﻿using MineCS.mc.level;
+﻿using MineCS.rubydung.level;
 using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mc.character
+namespace MineCS.rubydung.character
 {
     public class Zombie : Entity
     {

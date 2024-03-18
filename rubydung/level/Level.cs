@@ -1,7 +1,7 @@
-﻿using MineCS.mc.physics;
+﻿using MineCS.rubydung.physics;
 using System.IO.Compression;
 
-namespace MineCS.mc.level
+namespace MineCS.rubydung.level
 {
     public class Level
     {
@@ -37,9 +37,8 @@ namespace MineCS.mc.level
                 using (var ms = new MemoryStream())
                 {
                     gz.CopyTo(ms);
-                    if (ms.Length == 0)
-                        return;
-                    blocks = ms.ToArray();
+                    if (ms.Length > 0)
+                        blocks = ms.ToArray();
                 }
             }
             calcLightDepths(0, 0, width, height);

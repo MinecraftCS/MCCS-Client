@@ -1,7 +1,7 @@
-﻿using MineCS.mc.physics;
+﻿using MineCS.rubydung.physics;
 using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mc.level
+namespace MineCS.rubydung.level
 {
     public class Frustum
     {
@@ -10,6 +10,12 @@ namespace MineCS.mc.level
         float[] proj = new float[16];
         float[] modl = new float[16];
         float[] clip = new float[16];
+
+        private Frustum()
+        {
+            for (int i = 0; i < m_Frustum.Length; i++)
+                m_Frustum[i] = new float[4];
+        }
 
         public static Frustum getFrustum()
         {
@@ -24,12 +30,6 @@ namespace MineCS.mc.level
             frustum[side][1] = frustum[side][1] / magnitude;
             frustum[side][2] = frustum[side][2] / magnitude;
             frustum[side][3] = frustum[side][3] / magnitude;
-        }
-
-        private Frustum()
-        {
-            for (int i = 0; i < 6; i++)
-                m_Frustum[i] = new float[4];
         }
 
         private void calculateFrustum()
@@ -87,7 +87,7 @@ namespace MineCS.mc.level
         public bool pointInFrustum(float x, float y, float z)
         {
             for (int i = 0; i < 6; i++)
-                if (m_Frustum[i][0] * x + m_Frustum[i][1] * y + m_Frustum[i][2] * z + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x + m_Frustum[i][1] * y + m_Frustum[i][2] * z + m_Frustum[i][3] <= 0.0f)
                     return false;
             return true;
         }
@@ -104,21 +104,21 @@ namespace MineCS.mc.level
         {
             for (int i = 0; i < 6; i++)
             {
-                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0f)
                     return false;
-                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0F)
+                if (m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] <= 0.0f)
                     return false;
             }
             return true;
@@ -128,14 +128,14 @@ namespace MineCS.mc.level
         {
             for (int i = 0; i < 6;)
             {
-                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0F ||
-                  m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0F)
+                if (m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z1 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x1 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x2 + m_Frustum[i][1] * y1 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x1 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0f ||
+                    m_Frustum[i][0] * x2 + m_Frustum[i][1] * y2 + m_Frustum[i][2] * z2 + m_Frustum[i][3] > 0.0f)
                 {
                     i++;
                     continue;
