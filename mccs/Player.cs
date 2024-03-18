@@ -1,7 +1,7 @@
-﻿using MineCS.rubydung.level;
+﻿using MineCS.mccs.level;
 using OpenTK.Input;
 
-namespace MineCS.rubydung
+namespace MineCS.mccs
 {
     public class Player : Entity
     {
