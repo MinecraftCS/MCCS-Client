@@ -1,4 +1,4 @@
-﻿namespace MineCS.rubydung.physics
+﻿namespace MineCS.mccs.physics
 {
     public class AABB
     {

@@ -1,4 +1,4 @@
-﻿namespace MineCS.rubydung.level
+﻿namespace MineCS.mccs.level
 {
     public class Tile
     {
