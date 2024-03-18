@@ -1,5 +1,5 @@
 ﻿using MineCS.mccs.particle;
-using MineCS.mccs.physics;
+using MineCS.mccs.phys;
 
 namespace MineCS.mccs.level.tile
 {
@@ -12,6 +12,7 @@ namespace MineCS.mccs.level.tile
         public static Tile dirt = new DirtTile(3, 2);
         public static Tile stoneBrick = new Tile(4, 16);
         public static Tile wood = new Tile(5, 4);
+        public static Tile bush = new Bush(6);
         public int tex;
         public int id;
 
@@ -26,7 +27,7 @@ namespace MineCS.mccs.level.tile
             this.tex = tex;
         }
 
-        public void render(Tesselator t, Level level, int layer, int x, int y, int z)
+        public virtual void render(Tesselator t, Level level, int layer, int x, int y, int z)
         {
             float c1 = 1.0f;
             float c2 = 0.8f;
@@ -182,17 +183,22 @@ namespace MineCS.mccs.level.tile
             }
         }
 
-        public AABB getAABB(int x, int y, int z)
+        public AABB getTileAABB(int x, int y, int z)
         {
             return new AABB(x, y, z, x + 1, y + 1, z + 1);
         }
 
-        public bool blocksLight()
+        public virtual AABB getAABB(int x, int y, int z)
+        {
+            return new AABB(x, y, z, x + 1, y + 1, z + 1);
+        }
+
+        public virtual bool blocksLight()
         {
             return true;
         }
 
-        public bool isSolid()
+        public virtual bool isSolid()
         {
             return true;
         }

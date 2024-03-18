@@ -1,4 +1,4 @@
-﻿namespace MineCS.mccs.physics
+﻿namespace MineCS.mccs.phys
 {
     public class AABB
     {

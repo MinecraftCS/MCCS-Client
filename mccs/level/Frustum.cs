@@ -1,4 +1,4 @@
-﻿using MineCS.mccs.physics;
+﻿using MineCS.mccs.phys;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.level

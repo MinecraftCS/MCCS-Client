@@ -2,18 +2,18 @@
 {
     public class HitResult
     {
+        public int type;
         public int x;
         public int y;
         public int z;
-        public int o;
         public int f;
 
-        public HitResult(int x, int y, int z, int o, int f)
+        public HitResult(int type, int x, int y, int z, int f)
         {
+            this.type = type;
             this.x = x;
             this.y = y;
             this.z = z;
-            this.o = o;
             this.f = f;
         }
     }

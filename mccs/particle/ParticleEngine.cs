@@ -36,7 +36,9 @@ namespace MineCS.mccs.particle
             GL.BindTexture(TextureTarget.Texture2D, id);
             float xa = -(float)Math.Cos(player.yRot * Math.PI / 180.0);
             float za = -(float)Math.Sin(player.yRot * Math.PI / 180.0);
-            float ya = 1.0f;
+            float xa2 = -za * (float)Math.Sin(player.xRot * Math.PI / 180.0);
+            float za2 = xa * (float)Math.Sin(player.xRot * Math.PI / 180.0);
+            float ya = (float)Math.Cos(player.xRot * Math.PI / 180.0);
             Tesselator t = Tesselator.instance;
             GL.Color4(0.8f, 0.8f, 0.8f, 1.0f);
             t.init();
@@ -44,7 +46,7 @@ namespace MineCS.mccs.particle
             {
                 Particle p = particles[i];
                 if (p.isLit() ^ layer == 1)
-                    p.render(t, a, xa, ya, za);
+                    p.render(t, a, xa, ya, za, xa2, za2);
             }
             t.flush();
             GL.Disable(EnableCap.Texture2D);

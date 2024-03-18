@@ -1,5 +1,5 @@
 ﻿using MineCS.mccs.level.tile;
-using MineCS.mccs.physics;
+using MineCS.mccs.phys;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.level
@@ -80,8 +80,8 @@ namespace MineCS.mccs.level
             for (int i = 0; i < 8 && i < dirty.Count; i++)
                 dirty[i].rebuild();
         }
-
-        public void pick(Entity player)
+        
+        public void pick(Player player, Frustum frustum)
         {
             Tesselator t = Tesselator.instance;
             float reach = 3.0f;
@@ -93,35 +93,39 @@ namespace MineCS.mccs.level
             int z0 = (int)box.z0;
             int z1 = (int)(box.z1 + 1.0f);
             GL.InitNames();
+            GL.PushName(0);
+            GL.PushName(0);
             for (int x = x0; x < x1; x++)
             {
-                GL.PushName(x);
+                GL.LoadName(x);
+                GL.PushName(0);
                 for (int y = y0; y < y1; y++)
                 {
-                    GL.PushName(y);
+                    GL.LoadName(y);
+                    GL.PushName(0);
                     for (int z = z0; z < z1; z++)
                     {
-                        GL.PushName(z);
                         Tile tile = Tile.tiles[level.getTile(x, y, z)];
-                        if (tile != null)
+                        if (tile != null && frustum.cubeInFrustum(tile.getTileAABB(x, y, z)))
                         {
+                            GL.LoadName(z);
                             GL.PushName(0);
                             for (int i = 0; i < 6; i++)
                             {
-                                GL.PushName(i);
+                                GL.LoadName(i);
                                 t.init();
                                 tile.renderFaceNoTexture(t, x, y, z, i);
                                 t.flush();
-                                GL.PopName();
                             }
                             GL.PopName();
                         }
-                        GL.PopName();
                     }
                     GL.PopName();
                 }
                 GL.PopName();
             }
+            GL.PopName();
+            GL.PopName();
         }
 
         public void renderHit(HitResult h)

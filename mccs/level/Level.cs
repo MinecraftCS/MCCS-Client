@@ -1,5 +1,5 @@
 ﻿using MineCS.mccs.level.tile;
-using MineCS.mccs.physics;
+using MineCS.mccs.phys;
 using System;
 using System.IO.Compression;
 
@@ -158,8 +158,9 @@ namespace MineCS.mccs.level
                     for (int z = z0; z < z1; z++)
                     {
                         Tile tile = Tile.tiles[getTile(x, y, z)];
-                        if (tile != null)
-                            aABBs.Add(tile.getAABB(x, y, z));
+                        AABB? aabb = tile?.getAABB(x, y, z);
+                        if (tile != null && aabb != null)
+                            aABBs.Add(aabb);
                     }
             return aABBs;
         }
@@ -200,7 +201,7 @@ namespace MineCS.mccs.level
 
         public void tick()
         {
-            unprocessed += width + height + depth;
+            unprocessed += width * height * depth;
             int ticks = unprocessed / 400;
             unprocessed -= ticks * 400;
             for (int i = 0; i < ticks; i++)

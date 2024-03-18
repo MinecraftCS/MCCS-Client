@@ -1,5 +1,5 @@
 ﻿using MineCS.mccs.level.tile;
-using MineCS.mccs.physics;
+using MineCS.mccs.phys;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.level
@@ -20,7 +20,7 @@ namespace MineCS.mccs.level
         private bool dirty = true;
         private int lists = -1;
         public long dirtiedTime = 0L;
-        private static Tesselator t = new Tesselator();
+        private static Tesselator t = Tesselator.instance;
         public static int updates = 0;
         private static long totalTime = 0L;
         private static int totalUpdates = 0;

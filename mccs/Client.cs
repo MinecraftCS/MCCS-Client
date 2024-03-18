@@ -69,6 +69,8 @@ namespace MineCS.mccs
             GL.ClearDepth(1.0);
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(EnableCap.AlphaTest);
+            GL.AlphaFunc(AlphaFunction.Greater, 0.5f);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
             GL.MatrixMode(MatrixMode.Modelview);
@@ -114,7 +116,7 @@ namespace MineCS.mccs
                 }
             }
             else
-                Close();
+                destroy();
         }
 
         protected override void OnResize(EventArgs e)
@@ -137,13 +139,19 @@ namespace MineCS.mccs
                 paintTexture = 4;
             if (Input.KeyPress(Key.Number4))
                 paintTexture = 5;
+            if (Input.KeyPress(Key.Number6))
+                paintTexture = 6;
             if (Input.KeyPress(Key.G))
                 zombies.Add(new Zombie(level, player.x, player.y, player.z));
 
             level.tick();
             particleEngine.tick();
             for (int i = 0; i < zombies.Count; i++)
+            {
                 zombies[i].tick();
+                if (zombies[i].removed)
+                    zombies.RemoveAt(i--);
+            }
             player.tick();
             Input.UpdateInput();
         }
@@ -169,11 +177,11 @@ namespace MineCS.mccs
             moveCameraToPlayer(a);
         }
 
-        private void setupOrthoCamera()
+        private void setupOrthoCamera(int screenWidth, int screenHeight)
         {
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            GL.Ortho(0.0, width, height, 0.0, 100.0, 300.0);
+            GL.Ortho(0.0, screenWidth, screenHeight, 0.0, 100.0, 300.0);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             GL.Translate(0.0f, 0.0f, -200.0f);
@@ -199,7 +207,7 @@ namespace MineCS.mccs
             GL.SelectBuffer(selectBuffer.Length, selectBuffer);
             GL.RenderMode(RenderingMode.Select);
             setupPickCamera(a, width / 2, height / 2);
-            levelRenderer.pick(player);
+            levelRenderer.pick(player, Frustum.getFrustum());
             int hits = GL.RenderMode(RenderingMode.Render);
             selectBufferIndex = 0;
             Array.Resize(ref selectBuffer, selectBuffer.Length);
@@ -267,6 +275,7 @@ namespace MineCS.mccs
             Frustum frustum = Frustum.getFrustum();
             levelRenderer.updateDirtyChunks(player);
             setupFog(0);
+            GL.Enable(EnableCap.Fog);
             levelRenderer.render(player, 0);
             for (int i = 0; i < zombies.Count; i++)
                 if (zombies[i].isLit() && frustum.cubeInFrustum(zombies[i].bb))
@@ -282,7 +291,11 @@ namespace MineCS.mccs
             GL.Disable(EnableCap.Texture2D);
             GL.Disable(EnableCap.Fog);
             if (hitResult != null)
+            {
+                GL.Disable(EnableCap.AlphaTest);
                 levelRenderer.renderHit(hitResult);
+                GL.Enable(EnableCap.AlphaTest);
+            }
             drawGui(a);
             Context.SwapBuffers();
             Input.UpdateCursor();
@@ -290,15 +303,18 @@ namespace MineCS.mccs
 
         private void drawGui(float a)
         {
+            int screenWidth = width * 240 / height;
+            int screenHeight = height * 240 / height;
             GL.Clear(ClearBufferMask.DepthBufferBit);
-            setupOrthoCamera();
+            setupOrthoCamera(screenWidth, screenHeight);
             GL.PushMatrix();
-            GL.Translate(width - 48.0f, 48.0f, 0.0f);
+            GL.Translate(screenWidth - 16.0f, 16.0f, 0.0f);
             Tesselator t = Tesselator.instance;
-            GL.Scale(48.0f, 48.0f, 48.0f);
+            GL.Scale(16.0f, 16.0f, 16.0f);
             GL.Rotate(30.0f, 1.0f, 0.0f, 0.0f);
             GL.Rotate(45.0f, 0.0f, 1.0f, 0.0f);
-            GL.Translate(1.5f, -0.5f, -0.5f);
+            GL.Translate(-1.5f, 0.5f, -0.5f);
+            GL.Scale(-1.0f, -1.0f, 1.0);
             int id = Textures.loadTexture("/terrain.png", 9728);
             GL.BindTexture(TextureTarget.Texture2D, id);
             GL.Enable(EnableCap.Texture2D);
@@ -307,18 +323,18 @@ namespace MineCS.mccs
             t.flush();
             GL.Disable(EnableCap.Texture2D);
             GL.PopMatrix();
-            int wc = width / 2;
-            int hc = height / 2;
+            int wc = screenWidth / 2;
+            int hc = screenHeight / 2;
             GL.Color4(1.0f, 1.0f, 1.0f, 1.0f);
             t.init();
-            t.vertex(wc + 1, hc - 8, 0.0f);
-            t.vertex(wc, hc - 8, 0.0f);
-            t.vertex(wc, hc + 9, 0.0f);
-            t.vertex(wc + 1, hc + 9, 0.0f);
-            t.vertex(wc + 9, hc, 0.0f);
-            t.vertex(wc - 8, hc, 0.0f);
-            t.vertex(wc - 8, hc + 1, 0.0f);
-            t.vertex(wc + 9, hc + 1, 0.0f);
+            t.vertex(wc + 1, hc - 4, 0.0f);
+            t.vertex(wc,     hc - 4, 0.0f);
+            t.vertex(wc,     hc + 5, 0.0f);
+            t.vertex(wc + 1, hc + 5, 0.0f);
+            t.vertex(wc + 5, hc,     0.0f);
+            t.vertex(wc - 4, hc,     0.0f);
+            t.vertex(wc - 4, hc + 1, 0.0f);
+            t.vertex(wc + 5, hc + 1, 0.0f);
             t.flush();
         }
 

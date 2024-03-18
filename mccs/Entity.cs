@@ -1,5 +1,5 @@
 ﻿using MineCS.mccs.level;
-using MineCS.mccs.physics;
+using MineCS.mccs.phys;
 using OpenTK.Input;
 
 namespace MineCS.mccs
