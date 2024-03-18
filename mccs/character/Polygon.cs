@@ -1,6 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.rubydung.character
+namespace MineCS.mc.character
 {
     public class Polygon
     {

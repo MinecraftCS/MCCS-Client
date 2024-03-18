@@ -1,6 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.rubydung.level
+namespace MineCS.mc.level
 {
     public class Tesselator
     {
@@ -9,11 +9,14 @@ namespace MineCS.rubydung.level
         private float[] texCoordBuffer = new float[200000];
         private float[] colorBuffer = new float[300000];
         public int vertices = 0;
+
         private float u;
         private float v;
+
         private float r;
         private float g;
         private float b;
+
         private bool hasColor = false;
         private bool hasTexture = false;
 
@@ -66,12 +69,33 @@ namespace MineCS.rubydung.level
 			color(r, g, b);
 		}
 
+		public void color(int r, int g, int b)
+		{
+			color((byte)r, (byte)g, (byte)b);
+		}
+
 		public void color(float r, float g, float b)
         {
             hasColor = true;
             this.r = r;
             this.g = g;
             this.b = b;
+		}
+
+		public void color(byte r, byte g, byte b)
+		{
+			hasColor = true;
+			this.r = (r & 0xFF) / 255.0f;
+			this.g = (g & 0xFF) / 255.0f;
+			this.b = (b & 0xFF) / 255.0f;
+		}
+
+		public void vertexUV(float x, float y, float z, float u, float v)
+		{
+			hasTexture = true;
+			this.u = u;
+			this.v = v;
+			vertex(x, y, z);
 		}
 
 		public void vertex(float x, float y, float z)

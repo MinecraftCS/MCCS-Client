@@ -1,4 +1,4 @@
-﻿namespace MineCS.rubydung.level
+﻿namespace MineCS.mc.level
 {
     public interface LevelListener
     {

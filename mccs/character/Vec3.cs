@@ -1,4 +1,4 @@
-﻿namespace MineCS.rubydung.character
+﻿namespace MineCS.mc.character
 {
     public class Vec3
     {

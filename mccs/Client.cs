@@ -1,14 +1,14 @@
-﻿using MineCS.rubydung.character;
-using MineCS.rubydung.level;
+﻿using MineCS.mc.character;
+using MineCS.mc.level;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System.Diagnostics;
 
-namespace MineCS.rubydung
+namespace MineCS.mc
 {
-    public class RubyDung : GameWindow
+    public class Client : GameWindow
     {
         private int width;
         private int height;

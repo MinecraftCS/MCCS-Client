@@ -1,4 +1,4 @@
-﻿namespace MineCS.rubydung
+﻿namespace MineCS.mc
 {
     public class HitResult
     {
