@@ -1,6 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mccs.level
+namespace MineCS.mc.level
 {
     public class Tesselator
     {

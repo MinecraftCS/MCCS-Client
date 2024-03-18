@@ -1,7 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Input;
 
-namespace MineCS.mccs
+namespace MineCS.mc
 {
     public class Input
     {

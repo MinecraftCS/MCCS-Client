@@ -1,5 +1,5 @@
-﻿using MineCS.mccs.level;
-using MineCS.mccs.physics;
+﻿using MineCS.mc.level;
+using MineCS.mc.physics;
 
 namespace MineCS.mccs
 {

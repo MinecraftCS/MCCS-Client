@@ -1,4 +1,4 @@
-﻿namespace MineCS.mccs
+﻿namespace MineCS.mc
 {
     public class Timer
     {

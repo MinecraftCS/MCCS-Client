@@ -1,7 +1,7 @@
-﻿using MineCS.mccs.physics;
+﻿using MineCS.mc.physics;
 using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mccs.level
+namespace MineCS.mc.level
 {
     public class Frustum
     {

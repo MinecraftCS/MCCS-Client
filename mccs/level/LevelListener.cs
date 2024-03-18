@@ -1,4 +1,4 @@
-﻿namespace MineCS.mccs.level
+﻿namespace MineCS.mc.level
 {
     public interface LevelListener
     {

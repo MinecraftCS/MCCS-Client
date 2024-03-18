@@ -4,7 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
-namespace MineCS.mccs
+namespace MineCS.mc
 {
     public class Textures
     {

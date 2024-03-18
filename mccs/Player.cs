@@ -1,8 +1,8 @@
-﻿using MineCS.mccs.level;
-using MineCS.mccs.physics;
+﻿using MineCS.mc.level;
+using MineCS.mc.physics;
 using OpenTK.Input;
 
-namespace MineCS.mccs
+namespace MineCS.mc
 {
     public class Player
     {

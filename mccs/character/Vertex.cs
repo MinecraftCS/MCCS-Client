@@ -1,4 +1,4 @@
-﻿namespace MineCS.mccs.character
+﻿namespace MineCS.mc.character
 {
     public class Vertex
     {

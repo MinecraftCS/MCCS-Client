@@ -1,6 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mccs.character
+namespace MineCS.mc.character
 {
     public class Cube
     {

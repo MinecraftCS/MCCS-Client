@@ -1,7 +1,7 @@
-﻿using MineCS.mccs.level;
+﻿using MineCS.mc.level;
 using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.mccs.character
+namespace MineCS.mc.character
 {
     public class Zombie : Entity
     {
