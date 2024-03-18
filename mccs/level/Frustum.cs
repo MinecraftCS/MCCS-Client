@@ -1,7 +1,7 @@
-﻿using MineCS.rubydung.physics;
+﻿using MineCS.mccs.physics;
 using OpenTK.Graphics.OpenGL;
 
-namespace MineCS.rubydung.level
+namespace MineCS.mccs.level
 {
     public class Frustum
     {

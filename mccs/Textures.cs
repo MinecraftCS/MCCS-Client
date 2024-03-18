@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
-namespace MineCS.rubydung
+namespace MineCS.mccs
 {
     public class Textures
     {

@@ -1,4 +1,4 @@
-﻿namespace MineCS.rubydung
+﻿namespace MineCS.mccs
 {
     public class Timer
     {

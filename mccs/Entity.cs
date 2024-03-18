@@ -1,8 +1,8 @@
-﻿using MineCS.rubydung.level;
-using MineCS.rubydung.physics;
+﻿using MineCS.mccs.level;
+using MineCS.mccs.physics;
 using OpenTK.Input;
 
-namespace MineCS.rubydung
+namespace MineCS.mccs
 {
     public class Entity
     {
