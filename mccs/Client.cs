@@ -359,7 +359,7 @@ namespace MineCS.mccs
             {
                 float xo = Input.MouseDelta.X;
                 float yo = -Input.MouseDelta.Y;
-                player.turn(xo, yo);
+                player.turn(xo, yo * yMouseAxis);
             }
             checkGlError("Set viewport");
             pick(a);
