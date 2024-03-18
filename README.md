@@ -1,6 +1,6 @@
-# MineCS Client - rd-132211
+# MineCS Client - (Pre-Classic) rd-132211
 
-This is the MCCS Team's port of Minecraft version rd-132211.
+This is the MCCS Team's port of Minecraft version (Pre-Classic) rd-132211.
 
 ## Version Changelog
 
