@@ -5,7 +5,7 @@ namespace MineCS.mccs
 {
     public class Input
     {
-        private static Client rdGame;
+        private static Client client;
         private static List<Key> keysDown;
         private static List<Key> keysDownLast;
         private static List<MouseButton> buttonsDown;
@@ -18,7 +18,7 @@ namespace MineCS.mccs
 
         public static void Initialize(Client game)
         {
-            rdGame = game;
+            client = game;
             keysDown = new List<Key>();
             keysDownLast = new List<Key>();
             buttonsDown = new List<MouseButton>();
@@ -33,7 +33,7 @@ namespace MineCS.mccs
             game.MouseUp += Game_MouseUp;
             game.MouseMove += (o, e) =>
             {
-                if (rdGame.Focused)
+                if (client.Focused)
                 {
                     MouseDelta.X = e.XDelta + oldMouseDelta.X;
                     MouseDelta.Y = e.YDelta + oldMouseDelta.Y;
@@ -77,7 +77,7 @@ namespace MineCS.mccs
 
         public static void UpdateCursor()
         {
-            var rect = rdGame.Bounds;
+            var rect = client.Bounds;
             var mouseCenter = new Vector2(rect.Left + rect.Width / 2, rect.Bottom - rect.Height / 2);
 
             MouseDelta.X = 0;
@@ -85,8 +85,8 @@ namespace MineCS.mccs
             oldMouseDelta.X = Mouse.GetCursorState().X - mouseCenter.X;
             oldMouseDelta.Y = Mouse.GetCursorState().Y - mouseCenter.Y;
 
-            rdGame.CursorVisible = !rdGame.Focused;
-            if (rdGame.Focused)
+            client.CursorVisible = !client.Focused;
+            if (client.Focused)
                 Mouse.SetPosition(mouseCenter.X, mouseCenter.Y);
 
             MousePos.X = Mouse.GetCursorState().X - rect.Left;

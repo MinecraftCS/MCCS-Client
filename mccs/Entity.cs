@@ -20,7 +20,10 @@ namespace MineCS.mccs
         public float yRot;
         public AABB bb;
         public bool onGround = false;
+        public bool removed = false;
         protected float heightOffset = 0.0f;
+        protected float bbWidth = 0.6f;
+        protected float bbHeight = 1.8f;
 
         public Entity(Level level)
         {
@@ -31,19 +34,30 @@ namespace MineCS.mccs
         public void resetPos()
         {
             Random rnd = new Random();
-            float x = rnd.Next(level.width);
+            float x = rnd.NextSingle () * level.width;
             float y = level.depth + 10;
-            float z = rnd.Next(level.height);
+            float z = rnd.NextSingle() * level.height;
             setPos(x, y, z);
         }
 
-        private void setPos(float x, float y, float z)
+        public void remove()
+        {
+            removed = true;
+        }
+
+        protected void setSize(float w, float h)
+        {
+            bbWidth = w;
+            bbHeight = h;
+        }
+
+        protected void setPos(float x, float y, float z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
-            float w = 0.3f;
-            float h = 0.9f;
+            float w = bbWidth / 2.0f;
+            float h = bbHeight / 2.0f;
             bb = new AABB(x - w, y - h, z - w, x + w, y + h, z + w);
         }
 
@@ -103,6 +117,14 @@ namespace MineCS.mccs
             float cos = (float)Math.Cos(xRot * Math.PI / 180.0);
             xd += xa * cos - za * sin;
             zd += za * cos + xa * sin;
+        }
+
+        public bool isLit()
+        {
+            int xTile = (int)x;
+            int yTile = (int)y;
+            int zTile = (int)z;
+            return level.isLit(xTile, yTile, zTile);
         }
     }
 }

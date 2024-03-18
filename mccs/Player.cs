@@ -28,17 +28,17 @@ namespace MineCS.mccs
                 xa++;
             if (Input.KeyDown(Key.Space) || Input.KeyDown(Key.LAlt))
                 if (onGround)
-                    yd = 0.12f;
-            moveRelative(xa, ya, onGround ? 0.02f : 0.005f);
-            yd = (float)(yd - 0.005);
+                    yd = 0.5f;
+            moveRelative(xa, ya, onGround ? 0.1f : 0.02f);
+            yd = (float)(yd - 0.08);
             move(xd, yd, zd);
             xd *= 0.91f;
             yd *= 0.98f;
             zd *= 0.91f;
             if (onGround)
             {
-                xd *= 0.8f;
-                zd *= 0.8f;
+                xd *= 0.7f;
+                zd *= 0.7f;
             }
         }
     }

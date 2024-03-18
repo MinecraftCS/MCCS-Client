@@ -14,6 +14,8 @@ namespace MineCS.mccs.character
         public float xRot;
         public float yRot;
         public float zRot;
+        private bool compiled = false;
+        private int list = 0;
 
         public Cube(int xTexOffs, int yTexOffs)
         {
@@ -64,17 +66,28 @@ namespace MineCS.mccs.character
 
         public void render()
         {
+            if (!compiled)
+                compile();
             float c = 57.29578f;
             GL.PushMatrix();
             GL.Translate(x, y, z);
             GL.Rotate(zRot * c, 0.0f, 0.0f, 1.0f);
             GL.Rotate(yRot * c, 0.0f, 1.0f, 0.0f);
             GL.Rotate(xRot * c, 1.0f, 0.0f, 0.0f);
+            GL.CallList(list);
+            GL.PopMatrix();
+        }
+
+        private void compile()
+        {
+            list = GL.GenLists(1);
+            GL.NewList(list, ListMode.Compile);
             GL.Begin(PrimitiveType.Quads);
             for (int i = 0; i < polygons.Length; i++)
                 polygons[i].render();
             GL.End();
-            GL.PopMatrix();
+            GL.EndList();
+            compiled = true;
         }
     }
 }

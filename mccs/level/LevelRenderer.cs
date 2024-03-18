@@ -1,17 +1,18 @@
-﻿using MineCS.mccs.physics;
+﻿using MineCS.mccs.level.tile;
+using MineCS.mccs.physics;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.level
 {
     public class LevelRenderer : LevelListener
     {
+        private static int MAX_REBUILDS_PER_FRAME = 8;
         private static int CHUNK_SIZE = 16;
         private Level level;
         private Chunk[] chunks;
         private int xChunks;
         private int yChunks;
         private int zChunks;
-        Tesselator t = new Tesselator();
 
         public LevelRenderer(Level level)
         {
@@ -41,19 +42,48 @@ namespace MineCS.mccs.level
                     }
         }
 
+        public List<Chunk> getAllDirtyChunks()
+        {
+            List<Chunk> dirty = null;
+            for (int i = 0; i < chunks.Length; i++)
+            {
+                Chunk chunk = chunks[i];
+                if (chunk.isDirty())
+                {
+                    if (dirty == null)
+                        dirty = new List<Chunk>();
+                    dirty.Add(chunk);
+                }
+            }
+            return dirty;
+        }
+
         public void render(Entity player, int layer)
         {
-            Chunk.rebuiltThisFrame = 0;
+            GL.Enable(EnableCap.Texture2D);
+            int id = Textures.loadTexture("/terrain.png", 9728);
+            GL.BindTexture(TextureTarget.Texture2D, id);
             Frustum frustum = Frustum.getFrustum();
             for (int i = 0; i < chunks.Length; i++)
             {
                 if (frustum.cubeInFrustum((chunks[i]).aabb))
                     chunks[i].render(layer);
             }
+            GL.Disable(EnableCap.Texture2D);
+        }
+
+        public void updateDirtyChunks(Player player)
+        {
+            List<Chunk> dirty = getAllDirtyChunks();
+            if (dirty == null) return;
+            dirty.Sort(new DirtyChunkSorter(player, Frustum.getFrustum()));
+            for (int i = 0; i < 8 && i < dirty.Count; i++)
+                dirty[i].rebuild();
         }
 
         public void pick(Entity player)
         {
+            Tesselator t = Tesselator.instance;
             float reach = 3.0f;
             AABB box = player.bb.grow(reach, reach, reach);
             int x0 = (int)box.x0;
@@ -72,14 +102,15 @@ namespace MineCS.mccs.level
                     for (int z = z0; z < z1; z++)
                     {
                         GL.PushName(z);
-                        if (level.isSolidTile(x, y, z))
+                        Tile tile = Tile.tiles[level.getTile(x, y, z)];
+                        if (tile != null)
                         {
                             GL.PushName(0);
                             for (int i = 0; i < 6; i++)
                             {
                                 GL.PushName(i);
                                 t.init();
-                                Tile.rock.renderFace(t, x, y, z, i);
+                                tile.renderFaceNoTexture(t, x, y, z, i);
                                 t.flush();
                                 GL.PopName();
                             }
@@ -95,11 +126,12 @@ namespace MineCS.mccs.level
 
         public void renderHit(HitResult h)
         {
+            Tesselator t = Tesselator.instance;
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
-            GL.Color4(1.0f, 1.0f, 1.0f, (float)Math.Sin(DateTime.UtcNow.Millisecond / 100.0) * 0.2f + 0.4f);
+            GL.Color4(1.0f, 1.0f, 1.0f, ((float)Math.Sin(DateTime.UtcNow.Millisecond / 100.0) * 0.2f + 0.4f) * 0.5f);
             t.init();
-            Tile.rock.renderFace(t, h.x, h.y, h.z, h.f);
+            Tile.rock.renderFaceNoTexture(t, h.x, h.y, h.z, h.f);
             t.flush();
             GL.Disable(EnableCap.Blend);
         }

@@ -1,4 +1,6 @@
-﻿using MineCS.mccs.physics;
+﻿using MineCS.mccs.level.tile;
+using MineCS.mccs.physics;
+using System;
 using System.IO.Compression;
 
 namespace MineCS.mccs.level
@@ -11,6 +13,8 @@ namespace MineCS.mccs.level
         private byte[] blocks;
         private int[] lightDepths;
         private List<LevelListener> levelListeners = new List<LevelListener>();
+        private Random random = new Random();
+        int unprocessed = 0;
 
         public Level(int w, int h, int d)
         {
@@ -19,31 +23,67 @@ namespace MineCS.mccs.level
             depth = d;
             blocks = new byte[w * h * d];
             lightDepths = new int[w * h];
+            bool mapLoaded = load();
+            if (!mapLoaded)
+                generateMap();
+            calcLightDepths(0, 0, w, h);
+        }
+
+        private void generateMap()
+        {
+            int w = width;
+            int h = height;
+            int d = depth;
+            int[] heightmap1 = new PerlinNoiseFilter(0).read(w, h);
+            int[] heightmap2 = new PerlinNoiseFilter(0).read(w, h);
+            int[] cf = new PerlinNoiseFilter(1).read(w, h);
+            int[] rockmap = new PerlinNoiseFilter(1).read(w, h);
             for (int x = 0; x < w; x++)
                 for (int y = 0; y < d; y++)
                     for (int z = 0; z < h; z++)
                     {
+                        int dh;
+                        int dh1 = heightmap1[x + z * width];
+                        int dh2 = heightmap2[x + z * width];
+                        int cfh = cf[x + z * width];
+                        if (cfh < 128)
+                            dh2 = dh1;
+                        if (dh2 > (dh = dh1))
+                            dh = dh2;
+                        else
+                            dh2 = dh1;
+                        dh = dh / 8 + d / 3;
+                        int rh = rockmap[x + z * width] / 8 + d / 3;
+                        if (rh > dh - 2)
+                            rh = dh - 2;
                         int i = (y * height + z) * width + x;
-                        blocks[i] = (byte)((y <= d * 2 / 3) ? 1 : 0);
+                        int id = 0;
+                        if (y == dh)
+                            id = Tile.grass.id;
+                        if (y < dh)
+                            id = Tile.dirt.id;
+                        if (y <= rh)
+                            id = Tile.rock.id;
+                        blocks[i] = (byte)id;
                     }
-            calcLightDepths(0, 0, w, h);
-            load();
         }
 
-        public void load()
+        public bool load()
         {
             using (var gz = new GZipStream(new FileStream("level.dat", FileMode.OpenOrCreate), CompressionMode.Decompress))
             {
                 using (var ms = new MemoryStream())
                 {
                     gz.CopyTo(ms);
-                    if (ms.Length > 0)
-                        blocks = ms.ToArray();
+                    if (ms.Length == 0)
+                        return false;
+                    blocks = ms.ToArray();
                 }
             }
             calcLightDepths(0, 0, width, height);
             for (int i = 0; i < levelListeners.Count; i++)
                 levelListeners[i].allChanged();
+            return true;
         }
 
         public void save()
@@ -86,21 +126,10 @@ namespace MineCS.mccs.level
             levelListeners.Remove(levelListener);
         }
 
-        public bool isTile(int x, int y, int z)
-        {
-            if (x < 0 || y < 0 || z < 0 || x >= width || y >= depth || z >= height)
-                return false;
-            return blocks[(y * height + z) * width + x] == 1;
-        }
-
-        public bool isSolidTile(int x, int y, int z)
-        {
-            return isTile(x, y, z);
-        }
-
         public bool isLightBlocker(int x, int y, int z)
         {
-            return isSolidTile(x, y, z);
+            Tile tile = Tile.tiles[getTile(x, y, z)];
+            return tile != null && tile.blocksLight();
         }
 
         public List<AABB> getCubes(AABB aABB)
@@ -127,30 +156,62 @@ namespace MineCS.mccs.level
             for (int x = x0; x < x1; x++)
                 for (int y = y0; y < y1; y++)
                     for (int z = z0; z < z1; z++)
-                        if (isSolidTile(x, y, z))
-                            aABBs.Add(new AABB(x, y, z, x + 1, y + 1, z + 1));
+                    {
+                        Tile tile = Tile.tiles[getTile(x, y, z)];
+                        if (tile != null)
+                            aABBs.Add(tile.getAABB(x, y, z));
+                    }
             return aABBs;
         }
 
-        public float getBrightness(int x, int y, int z)
-        {
-            float dark = 0.8f;
-            float light = 1.0f;
-            if (x < 0 || y < 0 || z < 0 || x >= width || y >= depth || z >= height)
-                return light;
-            if (y < lightDepths[x + z * width])
-                return dark;
-            return light;
-        }
-
-        public void setTile(int x, int y, int z, int type)
+        public bool setTile(int x, int y, int z, int type)
         {
             if (x < 0 || y < 0 || z < 0 || x >= width || y >= depth || z >= height)
-                return;
+                return false;
+            if (type == blocks[(y * height + z) * width + x])
+                return false;
             blocks[(y * height + z) * width + x] = (byte)type;
             calcLightDepths(x, z, 1, 1);
             for (int i = 0; i < levelListeners.Count; i++)
                 levelListeners[i].tileChanged(x, y, z);
+            return true;
+        }
+
+        public bool isLit(int x, int y, int z)
+        {
+            if (x < 0 || y < 0 || z < 0 || x >= width || y >= depth || z >= height)
+                return true;
+            return y >= lightDepths[x + z * width];
+        }
+
+        public int getTile(int x, int y, int z)
+        {
+            if (x < 0 || y < 0 || z < 0 || x >= width || y >= depth || z >= height)
+                return 0;
+            return blocks[(y * height + z) * width + x];
+        }
+
+        public bool isSolidTile(int x, int y, int z)
+        {
+            Tile tile = Tile.tiles[getTile(x, y, z)];
+            if (tile == null) return false;
+            return tile.isSolid();
+        }
+
+        public void tick()
+        {
+            unprocessed += width + height + depth;
+            int ticks = unprocessed / 400;
+            unprocessed -= ticks * 400;
+            for (int i = 0; i < ticks; i++)
+            {
+                int z = random.Next(height);
+                int y = random.Next(depth);
+                int x = random.Next(width);
+                Tile tile = Tile.tiles[getTile(x, y, z)];
+                if (tile != null)
+                    tile.tick(this, x, y, z, random);
+            }
         }
     }
 }

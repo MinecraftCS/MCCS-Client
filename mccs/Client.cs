@@ -1,5 +1,7 @@
 ﻿using MineCS.mccs.character;
 using MineCS.mccs.level;
+using MineCS.mccs.level.tile;
+using MineCS.mccs.particle;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -12,38 +14,50 @@ namespace MineCS.mccs
     {
         private int width;
         private int height;
-        private float[] fogColor = new float[4];
-        private Timer timer = new Timer(60.0f);
+        private float[] fogColor0 = new float[4];
+        private float[] fogColor1 = new float[4];
+        private Timer timer = new Timer(20.0f);
         private Level level;
         private LevelRenderer levelRenderer;
         private Player player;
+        private int paintTexture = 1;
+        private ParticleEngine particleEngine;
         private List<Zombie> zombies = new List<Zombie>();
         private int[] viewportBuffer = new int[16];
         private int[] selectBuffer = new int[2000];
         private int selectBufferIndex = 0;
         private HitResult hitResult = null;
 
+        public Client() : base(1024, 768, new GraphicsMode(), "MCCS")
+        {
+            VSync = VSyncMode.Off;
+        }
+
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            Width = 1024;
-            Height = 768;
-            VSync = VSyncMode.Off;
-            Title = "Cave Game";
             init();
         }
 
         public void init() 
         {
-            int col = 0x0E0B0A;
+            int col0 = 0xFEFBFA;
+            int col1 = 0x0E0B0A;
             float fr = 0.5f;
             float fg = 0.8f;
             float fb = 1.0f;
-            fogColor = new float[] 
+            fogColor0 = new float[] 
             { 
-                (col >> 16 & 0xFF) / 255.0f, 
-                (col >> 8  & 0xFF) / 255.0f, 
-                (col       & 0xFF) / 255.0f, 
+                (col0 >> 16 & 0xFF) / 255.0f, 
+                (col0 >> 8  & 0xFF) / 255.0f, 
+                (col0       & 0xFF) / 255.0f, 
+                1.0f
+            };
+            fogColor1 = new float[] 
+            { 
+                (col1 >> 16 & 0xFF) / 255.0f, 
+                (col1 >> 8  & 0xFF) / 255.0f, 
+                (col1       & 0xFF) / 255.0f, 
                 1.0f
             };
             GL.Viewport(0, 0, Width, Height);
@@ -61,10 +75,15 @@ namespace MineCS.mccs
             level = new Level(256, 256, 64);
             levelRenderer = new LevelRenderer(level);
             player = new Player(level);
+            particleEngine = new ParticleEngine(level);
             Input.Initialize(this);
             CursorVisible = false;
-            for (int i = 0; i < 100; i++)
-                zombies.Add(new Zombie(level, 128.0f, 0.0f, 128.0f));
+            for (int i = 0; i < 10; i++)
+            {
+                Zombie zombie = new Zombie(level, 128.0f, 0.0f, 128.0f);
+                zombie.resetPos();
+                zombies.Add(zombie);
+            }
         }
 
         public void destroy()
@@ -108,6 +127,21 @@ namespace MineCS.mccs
 
         public void tick()
         {
+            if (Input.KeyPress(Key.Enter))
+                level.save();
+            if (Input.KeyPress(Key.Number1))
+                paintTexture = 1;
+            if (Input.KeyPress(Key.Number2))
+                paintTexture = 3;
+            if (Input.KeyPress(Key.Number3))
+                paintTexture = 4;
+            if (Input.KeyPress(Key.Number4))
+                paintTexture = 5;
+            if (Input.KeyPress(Key.G))
+                zombies.Add(new Zombie(level, player.x, player.y, player.z));
+
+            level.tick();
+            particleEngine.tick();
             for (int i = 0; i < zombies.Count; i++)
                 zombies[i].tick();
             player.tick();
@@ -133,6 +167,16 @@ namespace MineCS.mccs
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             moveCameraToPlayer(a);
+        }
+
+        private void setupOrthoCamera()
+        {
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.Ortho(0.0, width, height, 0.0, 100.0, 300.0);
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadIdentity();
+            GL.Translate(0.0f, 0.0f, -200.0f);
         }
 
         private void setupPickCamera(float a, int x, int y)
@@ -192,7 +236,12 @@ namespace MineCS.mccs
             pick(a);
 
             if (Input.MousePress(MouseButton.Right) && hitResult != null)
-                level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
+            {
+                Tile oldTile = Tile.tiles[level.getTile(hitResult.x, hitResult.y, hitResult.z)];
+                bool changed = level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
+                if (oldTile != null && changed)
+                    oldTile.destroy(level, hitResult.x, hitResult.y, hitResult.z, particleEngine);
+            }
             if (Input.MousePress(MouseButton.Left) && hitResult != null)
             {
                 int x = hitResult.x;
@@ -210,29 +259,93 @@ namespace MineCS.mccs
                     x--;
                 if (hitResult.f == 5)
                     x++;
-                level.setTile(x, y, z, 1);
+                level.setTile(x, y, z, paintTexture);
             }
-            if (Input.KeyPress(Key.Enter))
-                level.save();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             setupCamera(a);
             GL.Enable(EnableCap.CullFace);
-            GL.Enable(EnableCap.Fog);
-            GL.Fog(FogParameter.FogMode, 2048);
-            GL.Fog(FogParameter.FogDensity, 0.2f);
-            GL.Fog(FogParameter.FogColor, fogColor);
-            GL.Disable(EnableCap.Fog);
+            Frustum frustum = Frustum.getFrustum();
+            levelRenderer.updateDirtyChunks(player);
+            setupFog(0);
             levelRenderer.render(player, 0);
             for (int i = 0; i < zombies.Count; i++)
-                zombies[i].render(a);
-            GL.Enable(EnableCap.Fog);
+                if (zombies[i].isLit() && frustum.cubeInFrustum(zombies[i].bb))
+                    zombies[i].render(a);
+            particleEngine.render(player, a, 0);
+            setupFog(1);
             levelRenderer.render(player, 1);
+            for (int i = 0; i < zombies.Count; i++)
+                if (!zombies[i].isLit() && frustum.cubeInFrustum(zombies[i].bb))
+                    zombies[i].render(a);
+            particleEngine.render(player, a, 1);
+            GL.Disable(EnableCap.Lighting);
             GL.Disable(EnableCap.Texture2D);
+            GL.Disable(EnableCap.Fog);
             if (hitResult != null)
                 levelRenderer.renderHit(hitResult);
-            GL.Disable(EnableCap.Fog);
+            drawGui(a);
             Context.SwapBuffers();
             Input.UpdateCursor();
+        }
+
+        private void drawGui(float a)
+        {
+            GL.Clear(ClearBufferMask.DepthBufferBit);
+            setupOrthoCamera();
+            GL.PushMatrix();
+            GL.Translate(width - 48.0f, 48.0f, 0.0f);
+            Tesselator t = Tesselator.instance;
+            GL.Scale(48.0f, 48.0f, 48.0f);
+            GL.Rotate(30.0f, 1.0f, 0.0f, 0.0f);
+            GL.Rotate(45.0f, 0.0f, 1.0f, 0.0f);
+            GL.Translate(1.5f, -0.5f, -0.5f);
+            int id = Textures.loadTexture("/terrain.png", 9728);
+            GL.BindTexture(TextureTarget.Texture2D, id);
+            GL.Enable(EnableCap.Texture2D);
+            t.init();
+            Tile.tiles[paintTexture].render(t, level, 0, -2, 0, 0);
+            t.flush();
+            GL.Disable(EnableCap.Texture2D);
+            GL.PopMatrix();
+            int wc = width / 2;
+            int hc = height / 2;
+            GL.Color4(1.0f, 1.0f, 1.0f, 1.0f);
+            t.init();
+            t.vertex(wc + 1, hc - 8, 0.0f);
+            t.vertex(wc, hc - 8, 0.0f);
+            t.vertex(wc, hc + 9, 0.0f);
+            t.vertex(wc + 1, hc + 9, 0.0f);
+            t.vertex(wc + 9, hc, 0.0f);
+            t.vertex(wc - 8, hc, 0.0f);
+            t.vertex(wc - 8, hc + 1, 0.0f);
+            t.vertex(wc + 9, hc + 1, 0.0f);
+            t.flush();
+        }
+
+        private void setupFog(int i)
+        {
+            if (i == 0)
+            {
+                GL.Fog(FogParameter.FogMode, 2048);
+                GL.Fog(FogParameter.FogDensity, 0.001f);
+                GL.Fog(FogParameter.FogColor, fogColor0);
+                GL.Disable(EnableCap.Lighting);
+            }
+            else if (i == 1)
+            {
+                GL.Fog(FogParameter.FogMode, 2048);
+                GL.Fog(FogParameter.FogDensity, 0.06f);
+                GL.Fog(FogParameter.FogColor, fogColor1);
+                GL.Enable(EnableCap.Lighting);
+                GL.Enable(EnableCap.ColorMaterial);
+                float br = 0.6f;
+                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(br, br, br, 1.0f));
+            }
+        }
+
+        private float[] getBuffer(float a, float b, float c, float d)
+        {
+            return new float[] { a, b, c, d };
         }
 
         public static void checkError()

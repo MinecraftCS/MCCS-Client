@@ -1,4 +1,5 @@
-﻿using MineCS.mccs.physics;
+﻿using MineCS.mccs.level.tile;
+using MineCS.mccs.physics;
 using OpenTK.Graphics.OpenGL;
 
 namespace MineCS.mccs.level
@@ -13,11 +14,16 @@ namespace MineCS.mccs.level
         public int x1;
         public int y1;
         public int z1;
+        public float x;
+        public float y;
+        public float z;
         private bool dirty = true;
         private int lists = -1;
+        public long dirtiedTime = 0L;
         private static Tesselator t = new Tesselator();
-        public static int rebuiltThisFrame = 0;
         public static int updates = 0;
+        private static long totalTime = 0L;
+        private static int totalUpdates = 0;
 
         public Chunk(Level level, int x0, int y0, int z0, int x1, int y1, int z1)
         {
@@ -28,53 +34,71 @@ namespace MineCS.mccs.level
             this.x1 = x1;
             this.y1 = y1;
             this.z1 = z1;
+            x = (x0 + x1) / 2.0f;
+            y = (y0 + y1) / 2.0f;
+            z = (z0 + z1) / 2.0f;
             aabb = new AABB(x0, y0, z0, x1, y1, z1);
             lists = GL.GenLists(2);
         }
 
         private void rebuild(int layer)
         {
-            if (rebuiltThisFrame == 2)
-                return;
             dirty = false;
             updates++;
-            rebuiltThisFrame++;
-            int texture = Textures.loadTexture("/terrain.png", 9728);
+            long before = (long)(DateTime.UtcNow.TimeOfDay.TotalMilliseconds * 1000000.0);
             GL.NewList(lists + layer, ListMode.Compile);
-            GL.Enable(EnableCap.Texture2D);
-            GL.BindTexture(TextureTarget.Texture2D, texture);
             t.init();
             int tiles = 0;
             for (int x = x0; x < x1; x++)
                 for (int y = y0; y < y1; y++)
                     for (int z = z0; z < z1; z++)
-                        if (level.isTile(x, y, z))
+                    {
+                        int tileId = level.getTile(x, y, z);
+                        if (tileId > 0)
                         {
-                            bool tex = y == level.depth * 2 / 3;
+                            Tile.tiles[tileId].render(t, level, layer, x, y, z);
                             tiles++;
-                            if (tex)
-                                Tile.rock.render(t, level, layer, x, y, z);
-                            else
-                                Tile.grass.render(t, level, layer, x, y, z);
                         }
+                    }
             t.flush();
-            GL.Disable(EnableCap.Texture2D);
             GL.EndList();
+            long after = (long)(DateTime.UtcNow.TimeOfDay.TotalMilliseconds * 1000000.0);
+            if (tiles > 0)
+            {
+                totalTime += after - before;
+                totalUpdates++;
+            }
+        }
+
+        public void rebuild()
+        {
+            rebuild(0);
+            rebuild(1);
         }
 
         public void render(int layer)
         {
-            if (dirty)
-            {
-                rebuild(0);
-                rebuild(1);
-            }
             GL.CallList(lists + layer);
         }
 
         public void setDirty()
         {
+            if (!dirty)
+                dirtiedTime = (long)(DateTime.UtcNow.TimeOfDay.TotalMilliseconds * 1000000.0);
             dirty = true;
+        }
+
+        public bool isDirty()
+        {
+            return dirty;
+        }
+
+        public float distanceToSqr(Player player)
+        {
+            float xd = player.x - x;
+            float yd = player.y - y;
+            float zd = player.z - z;
+            return xd * xd + yd * yd + zd * zd;
         }
     }
 }
