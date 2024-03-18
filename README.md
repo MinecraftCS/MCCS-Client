@@ -1,8 +1,23 @@
-# MineCS Client
+# MineCS Client - (Pre-Classic) rd-161348
 
-This is the MCCS Team's port of Minecraft.
+This is the MCCS Team's port of Minecraft version (Pre-Classic) rd-161348.
 
-### Currently Porting: [rd-161348](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-161348)
+## Version Changelog
+
+Taken from the [Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_pre-Classic_rd-161348)
+
+### Additions
+
++ Blocks: Sapling
+
+### General
+
++ Particles now attempt to face the player
++ The crosshair is now thicker
++ The block preview is now flipped
+
+### Fixes
++ Fixed rendering glitch where the world became invisible at certain angles
 
 ## Credits
 
