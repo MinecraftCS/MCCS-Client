@@ -2,7 +2,7 @@
 
 This is the MCCS Team's port of Minecraft.
 
-### Currently Porting: [(Classic) 0.0.12a_03](https://minecraft.wiki/w/Java_Edition_Classic_0.0.12a_03)
+### Currently Porting: [(Classic) 0.0.13a_03](https://minecraft.wiki/w/Java_Edition_Classic_0.0.13a_03)
 
 ## Credits
 
