@@ -5,6 +5,7 @@
         public GrassTile(int id) : base(id)
         {
             tex = 3;
+            setDoTick(true);
         }
 
         protected override int getTexture(int face)
@@ -18,7 +19,8 @@
 
         public override void tick(Level level, int x, int y, int z, Random random)
         {
-            if (!level.isLit(x, y, z))
+            if (random.Next(4) != 0) return;
+            if (!level.isLit(x, y + 1, z))
                 level.setTile(x, y, z, dirt.id);
             else
             {

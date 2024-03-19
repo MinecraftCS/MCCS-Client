@@ -8,6 +8,7 @@ namespace MineCS.mccs.level.tile
         public Bush(int id) : base(id)
         {
             tex = 15;
+            setDoTick(true);
         }
 
         public override void tick(Level level, int x, int y, int z, Random random)
@@ -22,12 +23,12 @@ namespace MineCS.mccs.level.tile
             if (level.isLit(x, y, z) ^ layer != 1)
                 return;
             int tex = getTexture(15);
-            float u0 = (tex % 16) / 16.0f;
+            float u0 = tex % 16 / 16.0f;
             float u1 = u0 + 0.0624375f;
-            float v0 = (tex / 16) / 16.0f;
+            float v0 = tex / 16 / 16.0f;
             float v1 = v0 + 0.0624375f;
             int rots = 2;
-            t.color(1.0f, 1.0f, 1.0f);
+            t.color(255, 255, 255);
             for (int r = 0; r < rots; r++)
             {
                 float xa = (float)(Math.Sin(r * Math.PI / rots + 0.7853981633974483) * 0.5);
@@ -49,19 +50,8 @@ namespace MineCS.mccs.level.tile
             }
         }
 
-        public override AABB getAABB(int x, int y, int z)
-        {
-            return null;
-        }
-
-        public override bool blocksLight()
-        {
-            return false;
-        }
-
-        public override bool isSolid()
-        {
-            return false;
-        }
+        public override AABB getAABB(int x, int y, int z) => null;
+        public override bool blocksLight() => false;
+        public override bool isSolid() => false;
     }
 }

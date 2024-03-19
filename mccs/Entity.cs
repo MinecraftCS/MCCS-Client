@@ -34,15 +34,10 @@ namespace MineCS.mccs
         public void resetPos()
         {
             Random rnd = new Random();
-            float x = rnd.NextSingle () * level.width;
+            float x = rnd.NextSingle() * level.width;
             float y = level.depth + 10;
             float z = rnd.NextSingle() * level.height;
             setPos(x, y, z);
-        }
-
-        public void remove()
-        {
-            removed = true;
         }
 
         protected void setSize(float w, float h)
@@ -84,26 +79,36 @@ namespace MineCS.mccs
             float yaOrg = ya;
             float zaOrg = za;
             List<AABB> aABBs = level.getCubes(bb.expand(xa, ya, za));
+
             for (int i = 0; i < aABBs.Count(); i++)
                 ya = aABBs[i].clipYCollide(bb, ya);
             bb.move(0.0f, ya, 0.0f);
+
             for (int i = 0; i < aABBs.Count(); i++)
                 xa = aABBs[i].clipXCollide(bb, xa);
             bb.move(xa, 0.0f, 0.0f);
+
             for (int i = 0; i < aABBs.Count(); i++)
                 za = aABBs[i].clipZCollide(bb, za);
             bb.move(0.0f, 0.0f, za);
+
             onGround = yaOrg != ya && yaOrg < 0.0f;
+
             if (xaOrg != xa)
                 xd = 0.0f;
             if (yaOrg != ya)
                 yd = 0.0f;
             if (zaOrg != za)
                 zd = 0.0f;
+
             x = (bb.x0 + bb.x1) / 2.0f;
             y = bb.y0 + heightOffset;
             z = (bb.z0 + bb.z1) / 2.0f;
         }
+
+        public bool inWater() => level.isTileInRange(bb, 1);
+        public bool inLava() => level.isTileInRange(bb, 2);
+        public void remove() => removed = true;
 
         public void moveRelative(float xa, float za, float speed)
         {
@@ -127,6 +132,6 @@ namespace MineCS.mccs
             return level.isLit(xTile, yTile, zTile);
         }
 
-        public virtual void render(float a) {}
+        public virtual void render(float deltaTime) {}
     }
 }

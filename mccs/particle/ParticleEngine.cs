@@ -6,19 +6,12 @@ namespace MineCS.mccs.particle
 {
     public class ParticleEngine
     {
-        protected Level level;
-        private List<Particle> particles = new List<Particle>();
+        public List<Particle> particles = new List<Particle>();
         private Textures textures;
 
-        public ParticleEngine(Level level, Textures textures)
+        public ParticleEngine(Textures textures)
         {
-            this.level = level;
             this.textures = textures;
-        }
-
-        public void add(Particle p)
-        {
-            particles.Add(p);
         }
 
         public void tick()
@@ -32,7 +25,7 @@ namespace MineCS.mccs.particle
             }
         }
 
-        public void render(Player player, float a, int layer)
+        public void render(Player player, float deltaTime, int layer)
         {
             if (particles.Count == 0) return;
             GL.Enable(EnableCap.Texture2D);
@@ -50,7 +43,7 @@ namespace MineCS.mccs.particle
             {
                 Particle p = particles[i];
                 if (p.isLit() ^ layer == 1)
-                    p.render(t, a, xa, ya, za, xa2, za2);
+                    p.render(t, deltaTime, xa, ya, za, xa2, za2);
             }
             t.flush();
             GL.Disable(EnableCap.Texture2D);

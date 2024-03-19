@@ -5,15 +5,15 @@ namespace MineCS.mccs.particle
 {
     public class Particle : Entity
     {
-        private float xd;
-        private float yd;
-        private float zd;
+        private float xd2;
+        private float yd2;
+        private float zd2;
         public int tex;
-        private float uo;
-        private float vo;
-        private int age = 0;
+        public float u0;
+        public float v0;
+        private int life = 0;
         private int lifetime = 0;
-        private float size;
+        public float scale;
 
         public Particle(Level level, float x, float y, float z, float xa, float ya, float za, int tex) : base(level)
         {
@@ -22,19 +22,19 @@ namespace MineCS.mccs.particle
             setSize(0.2f, 0.2f);
             heightOffset = bbHeight / 2.0f;
             setPos(x, y, z);
-            xd = xa + (float)(rand.NextSingle() * 2.0 - 1.0) * 0.4f;
-            yd = ya + (float)(rand.NextSingle() * 2.0 - 1.0) * 0.4f;
-            zd = za + (float)(rand.NextSingle() * 2.0 - 1.0) * 0.4f;
+            xd2 = xa + (float)(rand.NextSingle() * 2.0 - 1.0) * 0.4f;
+            yd2 = ya + (float)(rand.NextSingle() * 2.0 - 1.0) * 0.4f;
+            zd2 = za + (float)(rand.NextSingle() * 2.0 - 1.0) * 0.4f;
             float speed = (float)(rand.NextSingle() + rand.NextSingle() + 1.0) * 0.15f;
-            float dd = (float)Math.Sqrt(xd * xd + yd * yd + zd * zd);
-            xd = xd / dd * speed * 0.4f;
-            yd = yd / dd * speed * 0.4f + 0.1f;
-            zd = zd / dd * speed * 0.4f;
-            uo = rand.NextSingle() * 3.0f;
-            vo = rand.NextSingle() * 3.0f;
-            size = rand.NextSingle() * 0.5f + 0.5f;
+            float dd = (float)Math.Sqrt(xd2 * xd2 + yd2 * yd2 + zd2 * zd2);
+            xd2 = xd2 / dd * speed * 0.4f;
+            yd2 = yd2 / dd * speed * 0.4f + 0.1f;
+            zd2 = zd2 / dd * speed * 0.4f;
+            u0 = rand.NextSingle() * 3.0f;
+            v0 = rand.NextSingle() * 3.0f;
+            scale = rand.NextSingle() * 0.5f + 0.5f;
             lifetime = (int)(4.0 / (rand.NextSingle() * 0.9 + 0.1));
-            age = 0;
+            life = 0;
         }
 
         public override void tick()
@@ -42,27 +42,27 @@ namespace MineCS.mccs.particle
             xo = x;
             yo = y;
             zo = z;
-            if (age++ >= lifetime)
+            if (life++ >= lifetime)
                 remove();
-            yd = (float)(yd - 0.04);
-            move(xd, yd, zd);
-            xd *= 0.98f;
-            yd *= 0.98f;
-            zd *= 0.98f;
+            yd2 = (float)(yd2 - 0.04);
+            move(xd2, yd2, zd2);
+            xd2 *= 0.98f;
+            yd2 *= 0.98f;
+            zd2 *= 0.98f;
             if (onGround)
             {
-                xd *= 0.7f;
-                zd *= 0.7f;
+                xd2 *= 0.7f;
+                zd2 *= 0.7f;
             }
         }
 
         public void render(Tesselator t, float a, float xa, float ya, float za, float xa2, float za2)
         {
-            float u0 = ((tex % 16) + uo / 4.0f) / 16.0f;
+            float u0 = ((tex % 16) + this.u0 / 4.0f) / 16.0f;
             float u1 = u0 + 0.015609375f;
-            float v0 = ((tex / 16) + vo / 4.0f) / 16.0f;
+            float v0 = ((tex / 16) + this.v0 / 4.0f) / 16.0f;
             float v1 = v0 + 0.015609375f;
-            float r = 0.1f * size;
+            float r = 0.1f * scale;
             float x = xo + (this.x - xo) * a;
             float y = yo + (this.y - yo) * a;
             float z = zo + (this.z - zo) * a;

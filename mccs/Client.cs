@@ -10,16 +10,16 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace MineCS.mccs
 {
     public class Client : GameWindow
     {
-        public static string VERSION_STRING = "0.0.11a";
+        public const string VERSION_STRING = "0.0.12a_03";
+
         private bool fullscreen = false;
-        private int width;
-        private int height;
+        public int width;
+        public int height;
         private float[] fogColor0 = new float[4];
         private float[] fogColor1 = new float[4];
         private Timer timer = new Timer(20.0f);
@@ -27,8 +27,8 @@ namespace MineCS.mccs
         private LevelRenderer levelRenderer;
         private Player player;
         private int paintTexture = 1;
-        private ParticleEngine particleEngine; private List<Entity> entities = new();
-        public bool appletMode = false;
+        private ParticleEngine particleEngine;
+        private List<Entity> entities = new();
         public volatile bool pause = false;
         private int yMouseAxis = 1;
         public Textures textures = new Textures();
@@ -46,74 +46,6 @@ namespace MineCS.mccs
         {
             this.fullscreen = fullscreen;
             VSync = VSyncMode.Off;
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            init();
-        }
-
-        public void init() 
-        {
-            int col0 = 0xFEFBFA;
-            int col1 = 0x0E0B0A;
-            float fr = 0.5f;
-            float fg = 0.8f;
-            float fb = 1.0f;
-            fogColor0 = new float[] 
-            { 
-                (col0 >> 16 & 0xFF) / 255.0f, 
-                (col0 >> 8  & 0xFF) / 255.0f, 
-                (col0       & 0xFF) / 255.0f, 
-                1.0f
-            };
-            fogColor1 = new float[] 
-            { 
-                (col1 >> 16 & 0xFF) / 255.0f, 
-                (col1 >> 8  & 0xFF) / 255.0f, 
-                (col1       & 0xFF) / 255.0f, 
-                1.0f
-            };
-
-            if (fullscreen)
-            {
-                width = DisplayDevice.Default.Width;
-                height = DisplayDevice.Default.Height;
-            }
-            Title = "MCCS " + VERSION_STRING;
-            checkGlError("Pre startup");
-            GL.Viewport(0, 0, Width, Height);
-            width = Width;
-            height = Height;
-            GL.Enable(EnableCap.Texture2D);
-            GL.ShadeModel(ShadingModel.Smooth);
-            GL.ClearColor(fr, fg, fb, 0.0f);
-            GL.ClearDepth(1.0);
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Lequal);
-            GL.Enable(EnableCap.AlphaTest);
-            GL.AlphaFunc(AlphaFunction.Greater, 0.0f);
-            GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadIdentity();
-            GL.MatrixMode(MatrixMode.Modelview);
-            checkGlError("Startup");
-            level = new Level(256, 256, 64);
-            levelRenderer = new LevelRenderer(level, textures);
-            player = new Player(level);
-            particleEngine = new ParticleEngine(level, textures);
-            font = new Font("/default.gif", textures);
-            Input.Initialize(this);
-            CursorVisible = false;
-            running = true;
-            mouseGrabbed = true;
-            for (int i = 0; i < 10; i++)
-            {
-                Zombie zombie = new Zombie(level, textures, 128.0f, 0.0f, 128.0f);
-                zombie.resetPos();
-                entities.Add(zombie);
-            }
-            checkGlError("Post startup");
         }
 
         private void checkGlError(string str)
@@ -134,6 +66,66 @@ namespace MineCS.mccs
             level.save();
         }
 
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            init();
+        }
+
+        public void init() 
+        {
+            float fr = 0.5f;
+            float fg = 0.8f;
+            float fb = 1.0f;
+            fogColor0 = new float[] 
+            { 
+                fr, fg, fb, 1.0f
+            };
+            fogColor1 = new float[] 
+            { 
+                14 / 255.0f,
+                11 / 255.0f,
+                10 / 255.0f,
+                1.0f
+            };
+
+            width = Width;
+            height = Height;
+            Title = "MCCS " + VERSION_STRING;
+            checkGlError("Pre startup");
+            GL.Viewport(0, 0, Width, Height);
+            GL.Enable(EnableCap.Texture2D);
+            GL.ShadeModel(ShadingModel.Smooth);
+            GL.ClearColor(fr, fg, fb, 0.0f);
+            GL.ClearDepth(1.0);
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(EnableCap.AlphaTest);
+            GL.AlphaFunc(AlphaFunction.Greater, 0.0f);
+            GL.CullFace(CullFaceMode.Back);
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.MatrixMode(MatrixMode.Modelview);
+            checkGlError("Startup");
+            font = new Font("/default.gif", textures);
+            GL.Viewport(0, 0, width, height);
+            level = new Level(this, 256, 256, 64);
+            levelRenderer = new LevelRenderer(level, textures);
+            player = new Player(level);
+            particleEngine = new ParticleEngine(textures);
+            for (int i = 0; i < 10; i++)
+            {
+                Zombie zombie = new Zombie(level, textures, 128.0f, 0.0f, 128.0f);
+                zombie.resetPos();
+                entities.Add(zombie);
+            }
+            Input.Initialize(this);
+            CursorVisible = false;
+            mouseGrabbed = true;
+            running = true;
+            checkGlError("Post startup");
+        }
+
         private static long lastTime = (long)DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
         private static int frames;
         protected override void OnRenderFrame(FrameEventArgs args)
@@ -147,7 +139,7 @@ namespace MineCS.mccs
                 for (int i = 0; i < timer.ticks; i++)
                     tick();
                 checkGlError("Pre render");
-                render(timer.a);
+                render(timer.deltaTime);
                 checkGlError("Post render");
                 frames++;
                 if (DateTime.UtcNow.TimeOfDay.TotalMilliseconds >= lastTime + 1000)
@@ -188,7 +180,6 @@ namespace MineCS.mccs
             }
             else if (hitResult != null)
             {
-                AABB aabb;
                 int x = hitResult.x;
                 int y = hitResult.y;
                 int z = hitResult.z;
@@ -204,7 +195,8 @@ namespace MineCS.mccs
                     x--;
                 if (hitResult.f == 5)
                     x++;
-                if ((aabb = Tile.tiles[paintTexture].getAABB(x, y, z)) == null || isFree(aabb))
+                AABB aabb = Tile.tiles[paintTexture].getAABB(x, y, z);
+                if (aabb == null || isFree(aabb))
                     level.setTile(x, y, z, paintTexture);
             }
         }
@@ -247,6 +239,14 @@ namespace MineCS.mccs
                 yMouseAxis *= -1;
             if (Input.KeyPress(Key.G))
                 entities.Add(new Zombie(level, textures, player.x, player.y, player.z));
+            if (Input.KeyPress(Key.N))
+            {
+                level.createLevel();
+                player.resetPos();
+                entities.Clear();
+            }
+            if (Input.KeyPress(Key.F))
+                levelRenderer.renderDistance = ++levelRenderer.renderDistance % 4;
 
             level.tick();
             particleEngine.tick();
@@ -270,25 +270,25 @@ namespace MineCS.mccs
             return true;
         }
 
-        private void moveCameraToPlayer(float a)
+        private void moveCameraToPlayer(float deltaTime)
         {
             GL.Translate(0.0f, 0.0f, -0.3f);
             GL.Rotate(player.yRot, 1.0f, 0.0f, 0.0f);
             GL.Rotate(player.xRot, 0.0f, 1.0f, 0.0f);
-            float x = player.xo + (player.x - player.xo) * a;
-            float y = player.yo + (player.y - player.yo) * a;
-            float z = player.zo + (player.z - player.zo) * a;
+            float x = player.xo + (player.x - player.xo) * deltaTime;
+            float y = player.yo + (player.y - player.yo) * deltaTime;
+            float z = player.zo + (player.z - player.zo) * deltaTime;
             GL.Translate(-x, -y, -z);
         }
 
-        private void setupCamera(float a)
+        private void setupCamera(float deltaTime)
         {
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
             Glu.Perspective(70.0f, (float)width / height, 0.05f, 1000.0f);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
-            moveCameraToPlayer(a);
+            moveCameraToPlayer(deltaTime);
         }
 
         private void setupOrthoCamera(int screenWidth, int screenHeight)
@@ -301,7 +301,7 @@ namespace MineCS.mccs
             GL.Translate(0.0f, 0.0f, -200.0f);
         }
 
-        private void setupPickCamera(float a, int x, int y)
+        private void setupPickCamera(float deltaTime, int x, int y)
         {
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
@@ -312,45 +312,34 @@ namespace MineCS.mccs
             Glu.Perspective(70.0f, (float)width / height, 0.05f, 1000.0f);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
-            moveCameraToPlayer(a);
+            moveCameraToPlayer(deltaTime);
         }
 
-        private void pick(float a)
+        private void pick(float deltaTime)
         {
             selectBufferIndex = 0;
             GL.SelectBuffer(selectBuffer.Length, selectBuffer);
             GL.RenderMode(RenderingMode.Select);
-            setupPickCamera(a, width / 2, height / 2);
+            setupPickCamera(deltaTime, width / 2, height / 2);
             levelRenderer.pick(player, Frustum.getFrustum());
             int hits = GL.RenderMode(RenderingMode.Render);
             selectBufferIndex = 0;
-            Array.Resize(ref selectBuffer, selectBuffer.Length);
-            long closest = 0L;
             int[] names = new int[10];
-            int hitNameCount = 0;
+            hitResult = null;
             for (int i = 0; i < hits; i++)
             {
                 int nameCount = selectBuffer[selectBufferIndex++];
-                long minZ = selectBuffer[selectBufferIndex++];
-                selectBufferIndex++;
-                long dist = minZ;
-                if (dist < closest || i == 0)
-                {
-                    closest = dist;
-                    hitNameCount = nameCount;
-                    for (int j = 0; j < nameCount; j++)
-                        names[j] = selectBuffer[selectBufferIndex++];
-                }
-                else
-                {
-                    for (int j = 0; j < nameCount; j++)
-                        selectBufferIndex++;
-                }
+                selectBufferIndex += 2;
+                for (int j = 0; j < nameCount; j++)
+                    names[j] = selectBuffer[selectBufferIndex++];
+                HitResult hR = new HitResult(names[0], names[1], names[2], names[3], names[4]);
+                if (hitResult != null && hR.distanceFromBlock(player, editMode) >= hitResult.distanceFromBlock(player, editMode))
+                    continue;
+                hitResult = hR;
             }
-            hitResult = hitNameCount > 0 ? new HitResult(names[0], names[1], names[2], names[3], names[4]) : null!;
         }
 
-        public void render(float a)
+        public void render(float deltaTime)
         {
             if (!Focused)
                 releaseMouse();
@@ -362,14 +351,14 @@ namespace MineCS.mccs
                 player.turn(xo, yo * yMouseAxis);
             }
             checkGlError("Set viewport");
-            pick(a);
+            pick(deltaTime);
             checkGlError("Picked");
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            setupCamera(a);
+            setupCamera(deltaTime);
             checkGlError("Set up camera");
             GL.Enable(EnableCap.CullFace);
             Frustum frustum = Frustum.getFrustum();
-            levelRenderer.updateDirtyChunks(player);
+            levelRenderer.updateDirtyChunks(player, frustum);
             checkGlError("Update chunks");
             setupFog(0);
             GL.Enable(EnableCap.Fog);
@@ -377,16 +366,25 @@ namespace MineCS.mccs
             checkGlError("Rendered level");
             for (int i = 0; i < entities.Count; i++)
                 if (entities[i].isLit() && frustum.cubeInFrustum(entities[i].bb))
-                    entities[i].render(a);
+                    entities[i].render(deltaTime);
             checkGlError("Rendered entities");
-            particleEngine.render(player, a, 0);
+            particleEngine.render(player, deltaTime, 0);
             checkGlError("Rendered particles");
             setupFog(1);
             levelRenderer.render(player, 1);
             for (int i = 0; i < entities.Count; i++)
                 if (!entities[i].isLit() && frustum.cubeInFrustum(entities[i].bb))
-                    entities[i].render(a);
-            particleEngine.render(player, a, 1);
+                    entities[i].render(deltaTime);
+            particleEngine.render(player, deltaTime, 1);
+            GL.CallList(levelRenderer.listIndex);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+            setupFog(0);
+            GL.CallList(levelRenderer.listIndex + 1);
+            GL.Enable(EnableCap.Blend);
+            GL.DepthMask(false);
+            levelRenderer.render(player, 2);
+            GL.DepthMask(true);
+            GL.Disable(EnableCap.Blend);
             GL.Disable(EnableCap.Lighting);
             GL.Disable(EnableCap.Texture2D);
             GL.Disable(EnableCap.Fog);
@@ -394,17 +392,17 @@ namespace MineCS.mccs
             if (hitResult != null)
             {
                 GL.Disable(EnableCap.AlphaTest);
-                levelRenderer.renderHit(hitResult, editMode, paintTexture);
+                levelRenderer.renderHit(player, hitResult, editMode, paintTexture);
                 GL.Enable(EnableCap.AlphaTest);
             }
             checkGlError("Rendered hit");
-            drawGui(a);
+            drawGui(deltaTime);
             checkGlError("Rendered gui");
             Context.SwapBuffers();
             Input.UpdateCursor();
         }
 
-        private void drawGui(float a)
+        private void drawGui(float deltaTime)
         {
             int screenWidth = width * 240 / height;
             int screenHeight = height * 240 / height;
@@ -436,11 +434,11 @@ namespace MineCS.mccs
             GL.Color4(1.0f, 1.0f, 1.0f, 1.0f);
             t.init();
             t.vertex(wc + 1, hc - 4, 0.0f);
-            t.vertex(wc,     hc - 4, 0.0f);
-            t.vertex(wc,     hc + 5, 0.0f);
+            t.vertex(wc, hc - 4, 0.0f);
+            t.vertex(wc, hc + 5, 0.0f);
             t.vertex(wc + 1, hc + 5, 0.0f);
-            t.vertex(wc + 5, hc,     0.0f);
-            t.vertex(wc - 4, hc,     0.0f);
+            t.vertex(wc + 5, hc, 0.0f);
+            t.vertex(wc - 4, hc, 0.0f);
             t.vertex(wc - 4, hc + 1, 0.0f);
             t.vertex(wc + 5, hc + 1, 0.0f);
             t.flush();
@@ -449,23 +447,38 @@ namespace MineCS.mccs
 
         private void setupFog(int i)
         {
-            if (i == 0)
+            Tile tile = Tile.tiles[level.getTile((int)player.x, (int)player.y, (int)player.z)];
+            if (tile != null && tile.getType() == 1)
+            {
+                GL.Fog(FogParameter.FogMode, 2048);
+                GL.Fog(FogParameter.FogDensity, 0.1f);
+                GL.Fog(FogParameter.FogColor, getBuffer(0.02f, 0.02f, 0.2f, 1.0f));
+                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(0.3f, 0.3f, 0.5f, 1.0f));
+            }
+            else if (tile != null && tile.getType() == 2)
+            {
+                GL.Fog(FogParameter.FogMode, 2048);
+                GL.Fog(FogParameter.FogDensity, 0.2f);
+                GL.Fog(FogParameter.FogColor, getBuffer(0.5f, 0.3f, 0.0f, 1.0f));
+                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(0.4f, 0.3f, 0.3f, 1.0f));
+            }
+            else if (i == 0)
             {
                 GL.Fog(FogParameter.FogMode, 2048);
                 GL.Fog(FogParameter.FogDensity, 0.001f);
                 GL.Fog(FogParameter.FogColor, fogColor0);
-                GL.Disable(EnableCap.Lighting);
+                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(1.0f, 1.0f, 1.0f, 1.0f));
             }
             else if (i == 1)
             {
                 GL.Fog(FogParameter.FogMode, 2048);
-                GL.Fog(FogParameter.FogDensity, 0.06f);
+                GL.Fog(FogParameter.FogDensity, 0.01f);
                 GL.Fog(FogParameter.FogColor, fogColor1);
-                GL.Enable(EnableCap.Lighting);
-                GL.Enable(EnableCap.ColorMaterial);
-                float br = 0.6f;
-                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(br, br, br, 1.0f));
+                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(0.6f, 0.6f, 0.6f, 1.0f));
             }
+            GL.Enable(EnableCap.ColorMaterial);
+            GL.ColorMaterial(MaterialFace.Front, ColorMaterialParameter.Ambient);
+            GL.Enable(EnableCap.Lighting);
         }
 
         private float[] getBuffer(float a, float b, float c, float d)
@@ -473,11 +486,26 @@ namespace MineCS.mccs
             return new float[] { a, b, c, d };
         }
 
-        public static void checkError()
+        public void loadingScreen(string message, string subMessage)
         {
-            ErrorCode e = GL.GetError();
-            if (e != ErrorCode.NoError)
-                throw new Exception(Glu.ErrorString(e));
+            int screenWidth = width * 240 / height;
+            int screenHeight = height * 240 / height;
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            Tesselator t = Tesselator.instance;
+            GL.Enable(EnableCap.Texture2D);
+            int id = textures.loadTexture("/dirt.png", 9728);
+            GL.BindTexture(TextureTarget.Texture2D, id);
+            t.init();
+            t.color(0x808080);
+            t.vertexUV(0.0f, screenHeight, 0.0f, 0.0f, screenHeight / 32.0f);
+            t.vertexUV(screenWidth, screenHeight, 0.0f, screenWidth / 32.0f, screenHeight / 32.0f);
+            t.vertexUV(screenWidth, 0.0f, 0.0f, screenWidth / 32.0f, 0.0f);
+            t.vertexUV(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+            t.flush();
+            GL.Enable(EnableCap.Texture2D);
+            font.drawShadow(message, (screenWidth - font.width(message)) / 2, screenHeight / 2 + 4, 0xFFFFFF);
+            font.drawShadow(subMessage, (screenWidth - font.width(subMessage)) / 2, screenHeight / 2 - 8, 0xFFFFFF);
+            Context.SwapBuffers();
         }
     }
 }

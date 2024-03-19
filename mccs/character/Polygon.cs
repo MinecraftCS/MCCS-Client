@@ -5,12 +5,10 @@ namespace MineCS.mccs.character
     public class Polygon
     {
         public Vertex[] vertices;
-        public int vertexCount = 0;
 
         public Polygon(Vertex[] vertices)
         {
             this.vertices = vertices;
-            vertexCount = vertices.Length;
         }
 
         public Polygon(Vertex[] vertices, int u0, int v0, int u1, int v1) : this(vertices)

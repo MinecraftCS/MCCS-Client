@@ -28,17 +28,17 @@
             float _x1 = x1;
             float _y1 = y1;
             float _z1 = z1;
-            if (xa < 0.0F)
+            if (xa < 0.0f)
                 _x0 += xa;
-            if (xa > 0.0F)
+            if (xa > 0.0f)
                 _x1 += xa;
-            if (ya < 0.0F)
+            if (ya < 0.0f)
                 _y0 += ya;
-            if (ya > 0.0F)
+            if (ya > 0.0f)
                 _y1 += ya;
-            if (za < 0.0F)
+            if (za < 0.0f)
                 _z0 += za;
-            if (za > 0.0F)
+            if (za > 0.0f)
                 _z1 += za;
             return new AABB(_x0, _y0, _z0, _x1, _y1, _z1);
         }

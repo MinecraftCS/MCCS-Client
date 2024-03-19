@@ -79,10 +79,10 @@ namespace MineCS.mccs.gui
                 }
                 int ix = chars[i] % 16 * 8;
                 int iy = chars[i] / 16 * 8;
-                t.vertexUV(x + xo, y + 8, 0.0f, ix / 128.0f, (iy + 8) / 128.0f);
+                t.vertexUV(x + xo,     y + 8, 0.0f, ix       / 128.0f, (iy + 8) / 128.0f);
                 t.vertexUV(x + xo + 8, y + 8, 0.0f, (ix + 8) / 128.0f, (iy + 8) / 128.0f);
-                t.vertexUV(x + xo + 8, y, 0.0f, (ix + 8) / 128.0f, iy / 128.0f);
-                t.vertexUV(x + xo, y, 0.0f, ix / 128.0f, iy / 128.0f);
+                t.vertexUV(x + xo + 8, y,     0.0f, (ix + 8) / 128.0f, iy       / 128.0f);
+                t.vertexUV(x + xo,     y,     0.0f, ix       / 128.0f, iy       / 128.0f);
                 xo += charWidths[chars[i]];
             }
             t.flush();

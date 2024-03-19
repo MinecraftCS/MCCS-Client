@@ -21,10 +21,8 @@ namespace MineCS.mccs.level
         private bool dirty = true;
         private int lists = -1;
         public long dirtiedTime = 0L;
-        private static Tesselator t = Tesselator.instance;
+        public bool loaded;
         public static int updates = 0;
-        private static long totalTime = 0L;
-        private static int totalUpdates = 0;
 
         public Chunk(Level level, int x0, int y0, int z0, int x1, int y1, int z1)
         {
@@ -39,15 +37,13 @@ namespace MineCS.mccs.level
             y = (y0 + y1) / 2.0f;
             z = (z0 + z1) / 2.0f;
             aabb = new AABB(x0, y0, z0, x1, y1, z1);
-            lists = GL.GenLists(2);
+            lists = GL.GenLists(3);
         }
 
         private void rebuild(int layer)
         {
-            dirty = false;
-            updates++;
-            long before = (long)(DateTime.UtcNow.TimeOfDay.TotalMilliseconds * 1000000.0);
             GL.NewList(lists + layer, ListMode.Compile);
+            Tesselator t = Tesselator.instance;
             t.init();
             int tiles = 0;
             for (int x = x0; x < x1; x++)
@@ -63,18 +59,15 @@ namespace MineCS.mccs.level
                     }
             t.flush();
             GL.EndList();
-            long after = (long)(DateTime.UtcNow.TimeOfDay.TotalMilliseconds * 1000000.0);
-            if (tiles > 0)
-            {
-                totalTime += after - before;
-                totalUpdates++;
-            }
         }
 
         public void rebuild()
         {
+            updates++;
             rebuild(0);
             rebuild(1);
+            rebuild(2);
+            dirty = false;
         }
 
         public void render(int layer)
@@ -89,10 +82,7 @@ namespace MineCS.mccs.level
             dirty = true;
         }
 
-        public bool isDirty()
-        {
-            return dirty;
-        }
+        public bool isDirty() => dirty;
 
         public float distanceToSqr(Player player)
         {
@@ -100,6 +90,16 @@ namespace MineCS.mccs.level
             float yd = player.y - y;
             float zd = player.z - z;
             return xd * xd + yd * yd + zd * zd;
+        }
+
+        public void setOuter()
+        {
+            dirty = true;
+            for (int i = 0; i < 3; i++)
+            {
+                GL.NewList(lists + i, ListMode.Compile);
+                GL.EndList();
+            }
         }
     }
 }

@@ -2,7 +2,6 @@
 using OpenTK.Graphics.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Diagnostics;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
 namespace MineCS.mccs.renderer
@@ -19,7 +18,6 @@ namespace MineCS.mccs.renderer
             GL.GenTextures(ib.Length, ib);
             int id = ib[0];
             idMap.Add(resourceName, id);
-            Debug.WriteLine(resourceName + " -> " + id);
             GL.BindTexture(TextureTarget.Texture2D, id);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, mode);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, mode);

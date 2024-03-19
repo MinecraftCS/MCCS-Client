@@ -4,8 +4,9 @@ namespace MineCS.mccs.renderer
 {
     public class Tesselator
     {
-        private const int MAX_VERTICES = 0x400000;
-        private const int MAX_FLOATS = 0x80000;
+        public const int MAX_VERTICES = 0x400000;
+        public const int MAX_FLOATS = 0x80000;
+        
         private float[] buffer = new float[MAX_FLOATS];
         private float[] array = new float[MAX_FLOATS];
         public int vertices = 0;
@@ -18,7 +19,7 @@ namespace MineCS.mccs.renderer
         private bool hasTexture = false;
         private int len = 3;
         private int p = 0;
-        private bool noColor = false;
+        private bool lockColor = false;
         public static Tesselator instance = new Tesselator();
 
         public void flush()
@@ -63,7 +64,7 @@ namespace MineCS.mccs.renderer
             clear();
             hasColor = false;
             hasTexture = false;
-            noColor = false;
+            lockColor = false;
         }
 
         public void tex(float u, float v)
@@ -75,15 +76,20 @@ namespace MineCS.mccs.renderer
             this.v = v;
         }
 
-        public void color(float r, float g, float b)
+        public void color(int r, int g, int b)
         {
-            if (noColor) return;
+            color((byte)r, (byte)g, (byte)b);
+        }
+
+        public void color(byte r, byte g, byte b)
+        {
+            if (lockColor) return;
             if (!hasColor)
                 len += 3;
             hasColor = true;
-            this.r = r;
-            this.g = g;
-            this.b = b;
+            this.r = (r & 0xFF) / 255.0f;
+            this.g = (g & 0xFF) / 255.0f;
+            this.b = (b & 0xFF) / 255.0f;
         }
 
         public void vertexUV(float x, float y, float z, float u, float v)
@@ -115,15 +121,15 @@ namespace MineCS.mccs.renderer
 
         public void color(int c)
         {
-            float r = (c >> 16 & 0xFF) / 255.0f;
-            float g = (c >> 8 & 0xFF) / 255.0f;
-            float b = (c & 0xFF) / 255.0f;
+            int r = c >> 16 & 0xFF;
+            int g = c >> 8  & 0xFF;
+            int b = c       & 0xFF;
             color(r, g, b);
         }
 
-        public void NoColor()
+        public void LockColor()
         {
-            noColor = true;
+            lockColor = true;
         }
     }
 }

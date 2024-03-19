@@ -23,15 +23,6 @@ namespace MineCS.mccs.renderer
             return frustum;
         }
 
-        private void normalizePlane(float[][] frustum, int side)
-        {
-            float magnitude = (float)Math.Sqrt(frustum[side][0] * frustum[side][0] + frustum[side][1] * frustum[side][1] + frustum[side][2] * frustum[side][2]);
-            frustum[side][0] = frustum[side][0] / magnitude;
-            frustum[side][1] = frustum[side][1] / magnitude;
-            frustum[side][2] = frustum[side][2] / magnitude;
-            frustum[side][3] = frustum[side][3] / magnitude;
-        }
-
         private void calculateFrustum()
         {
             GL.GetFloat(GetPName.ProjectionMatrix, proj);
@@ -82,6 +73,15 @@ namespace MineCS.mccs.renderer
             m_Frustum[5][2] = clip[11] + clip[10];
             m_Frustum[5][3] = clip[15] + clip[14];
             normalizePlane(m_Frustum, 5);
+        }
+
+        private void normalizePlane(float[][] frustum, int side)
+        {
+            float magnitude = (float)Math.Sqrt(frustum[side][0] * frustum[side][0] + frustum[side][1] * frustum[side][1] + frustum[side][2] * frustum[side][2]);
+            frustum[side][0] = frustum[side][0] / magnitude;
+            frustum[side][1] = frustum[side][1] / magnitude;
+            frustum[side][2] = frustum[side][2] / magnitude;
+            frustum[side][3] = frustum[side][3] / magnitude;
         }
 
         public bool pointInFrustum(float x, float y, float z)
