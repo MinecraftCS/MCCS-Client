@@ -1,8 +1,25 @@
-# MineCS Client
+# MineCS Client - (Classic) 0.0.12a_03
 
-This is the MCCS Team's port of Minecraft.
+This is the MCCS Team's port of Minecraft version (Classic) 0.0.12a_03.
 
-### Currently Porting: [(Classic) 0.0.12a_03](https://minecraft.wiki/w/Java_Edition_Classic_0.0.12a_03)
+## Version Changelog
+
+Taken from the [Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_Classic_0.0.12a_03)
+
+### Additions
+
++ Bedrock
++ Water
++ Lava
++ The world is now surrounded by an ocean
++ The player can no longer leave the confines of the world
++ Pressing `F` now changes the player's render distance
++ Pressing `N` now generates a new lever
+
+### Changes
+
++ Player jump height increased by about half a block
++ Improved world generation
 
 ## Credits
 
