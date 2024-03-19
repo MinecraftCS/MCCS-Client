@@ -47,7 +47,7 @@ namespace MineCS.mccs
                 zd *= 0.7f;
                 yd -= 0.02f;
             }
-            if (inLava)
+            else if (inLava)
             {
                 moveRelative(xa, ya, 0.02f);
                 move(xd, yd, zd);

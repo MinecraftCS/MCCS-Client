@@ -23,6 +23,7 @@ namespace MineCS.mccs.level.tile
             }
             liquidId = id;
             liquidIdIndexed = id + 1;
+            setSize(0.0f, -0.1f, 0.0f, 1.0f, 0.9f, 1.0f);
             setDoTick(true);
         }
 

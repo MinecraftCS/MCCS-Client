@@ -26,22 +26,20 @@ namespace MineCS.mccs.character
 
         public override void tick()
         {
+            base.tick();
             Random rand = new Random();
-            xo = x;
-            yo = y;
-            zo = z;
             float xa, ya;
             if (y < -100.0f)
                 remove();
             rot += rotA;
-            rotA = (float)(rotA * 0.99);
-            rotA = (float)(rotA + (rand.NextSingle() - rand.NextSingle()) * rand.NextSingle() * rand.NextSingle() * 0.08);
+            rotA *= 0.99f;
+            rotA += (rand.NextSingle() - rand.NextSingle()) * rand.NextSingle() * rand.NextSingle() * 0.08f;
             xa = (float)Math.Sin(rot);
             ya = (float)Math.Cos(rot);
             if (onGround && rand.NextSingle() < 0.08)
                 yd = 0.5f;
-            moveRelative(xa, ya, onGround ? 0.01f : 0.02f);
-            yd = (float)(yd - 0.08);
+            moveRelative(xa, ya, onGround ? 0.1f : 0.02f);
+            yd -= 0.08f;
             move(xd, yd, zd);
             xd *= 0.91f;
             yd *= 0.98f;

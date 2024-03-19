@@ -21,11 +21,28 @@ namespace MineCS.mccs.level.tile
         public static Tile lava2 = new Liquid2(11, 2);
         public int tex;
         public int id;
+        private float x0;
+        private float y0;
+        private float z0;
+        private float x1;
+        private float y1;
+        private float z1;
 
         protected Tile(int id)
         {
             tiles[id] = this;
             this.id = id;
+            setSize(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+        }
+
+        protected void setSize(float x0, float y0, float z0, float x1, float y1, float z1)
+        {
+            this.x0 = x0;
+            this.y0 = y0;
+            this.z0 = z0;
+            this.x1 = x1;
+            this.y1 = y1;
+            this.z1 = z1;
         }
 
         protected void setDoTick(bool doTick)
@@ -80,12 +97,12 @@ namespace MineCS.mccs.level.tile
             float u1 = u0 + 0.0624375f;
             float v0 = tex / 16 / 16.0f;
             float v1 = v0 + 0.0624375f;
-            float x0 = x + 0.0f;
-            float x1 = x + 1.0f;
-            float y0 = y + 0.0f;
-            float y1 = y + 1.0f;
-            float z0 = z + 0.0f;
-            float z1 = z + 1.0f;
+            float x0 = x + this.x0;
+            float x1 = x + this.x1;
+            float y0 = y + this.y0;
+            float y1 = y + this.y1;
+            float z0 = z + this.z0;
+            float z1 = z + this.z1;
             if (face == 0)
             {
                 t.vertexUV(x0, y0, z1, u0, v1);
@@ -137,12 +154,12 @@ namespace MineCS.mccs.level.tile
             float u1 = u0 + 0.0624375f;
             float v0 = tex / 16 / 16.0f;
             float v1 = v0 + 0.0624375f;
-            float x0 = x + 0.0f;
-            float x1 = x + 1.0f;
-            float y0 = y + 0.0f;
-            float y1 = y + 1.0f;
-            float z0 = z + 0.0f;
-            float z1 = z + 1.0f;
+            float x0 = x + this.x0;
+            float x1 = x + this.x1;
+            float y0 = y + this.y0;
+            float y1 = y + this.y1;
+            float z0 = z + this.z0;
+            float z1 = z + this.z1;
             if (face == 0)
             {
                 t.vertexUV(x1, y0, z1, u1, v1);
