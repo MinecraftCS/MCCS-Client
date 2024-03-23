@@ -1,6 +1,5 @@
 ﻿using MineCS.mccs.phys;
 using MineCS.mccs.renderer;
-using System.Runtime.InteropServices;
 
 namespace MineCS.mccs.level.tile
 {
@@ -50,7 +49,7 @@ namespace MineCS.mccs.level.tile
                 didSpread |= tryHoriSpread(level, x, y, z + 1, param);
             }
             if (!didSpread)
-                level.checkForTile(x, y, z, liquidIdIndexed);
+                level.tryReplaceTile(x, y, z, liquidIdIndexed);
             return didSpread;
         }
 
@@ -67,13 +66,14 @@ namespace MineCS.mccs.level.tile
             return didSpread;
         }
 
-        public override bool shouldRenderFace(Level level, int x, int y, int z, int layer)
+        public override bool shouldRenderFace(Level level, int x, int y, int z, int layer, int face)
         {
-            if (layer != 2) return false;
+            if (x < 0 || y < 0 || z < 0 || x >= level.width || z >= level.height) return false;
+            if (layer != 2 && type == 1) return false;
             int tile = level.getTile(x, y, z);
             if (tile == liquidId || tile == liquidIdIndexed)
                 return false;
-            return base.shouldRenderFace(level, x, y, z, -1);
+            return base.shouldRenderFace(level, x, y, z, -1, face);
         }
 
         public override void renderFace(Tesselator t, int x, int y, int z, int face)
@@ -90,9 +90,9 @@ namespace MineCS.mccs.level.tile
         public override void checkFaces(Level level, int x, int y, int z, int id)
         {
             if (type == 1 && id == lava.id)
-                level.checkForTile(x, y, z, stone.id);
+                level.tryReplaceTile(x, y, z, stone.id);
             if (type == 2 && id == water.id)
-                level.checkForTile(x, y, z, stone.id);
+                level.tryReplaceTile(x, y, z, stone.id);
         }
     }
 }

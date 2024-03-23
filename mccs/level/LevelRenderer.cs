@@ -16,6 +16,8 @@ namespace MineCS.mccs.level
         private Textures textures;
         public int listIndex;
         public int renderDistance = 0;
+        private int[] loaded = new int[1024];
+        private int loadedIndex = 0;
         private float x = 0.0f;
         private float y = 0.0f;
         private float z = 0.0f;
@@ -25,6 +27,19 @@ namespace MineCS.mccs.level
             this.level = level;
             this.textures = textures;
             level.levelListeners.Add(this);
+            listIndex = GL.GenLists(2);
+            loadRenderer();
+        }
+
+        public void loadRenderer()
+        {
+            x = -900000.0f;
+            y = -900000.0f;
+            z = -900000.0f;
+            if (publicChunks != null)
+                for (int i = 0; i < publicChunks.Length; i++)
+                    publicChunks[i].delete();
+
             xChunks = (level.width + 16 - 1) / 16;
             yChunks = (level.depth + 16 - 1) / 16;
             zChunks = (level.height + 16 - 1) / 16;
@@ -55,30 +70,7 @@ namespace MineCS.mccs.level
             GL.NewList(listIndex + 1, ListMode.Compile);
             outerChunkWaterRenderer();
             GL.EndList();
-        }
-
-        public void render(Player player, int layer)
-        {
-            GL.Enable(EnableCap.Texture2D);
-            int id = textures.loadTexture("/terrain.png", 9728);
-            GL.BindTexture(TextureTarget.Texture2D, id);
-            float dx = player.x - x;
-            float dy = player.y - y;
-            float dz = player.z - z;
-            if (dx * dx + dy * dy + dz * dz > 64.0f)
-            {
-                x = player.x;
-                y = player.y;
-                z = player.z;
-            }
-            for (int i = 0; i < chunks.Length; i++)
-            {
-                if (!chunks[i].loaded) continue;
-                float dist = 256 / (1 << renderDistance);
-                if (renderDistance != 0 && !(chunks[i].distanceToSqr(player) < dist * dist)) continue;
-                chunks[i].render(layer);
-            }
-            GL.Disable(EnableCap.Texture2D);
+            createOuterChunks();
         }
 
         private void outerChunkRenderer()
@@ -89,46 +81,46 @@ namespace MineCS.mccs.level
             GL.Color4(1.0f, 1.0f, 1.0f, 1.0f);
             Tesselator t = Tesselator.instance;
             float size = 32.0f - 2.0f;
+            int stride = Math.Min(128, Math.Min(level.width, level.height));
+            int chunks = 2048 / stride;
             t.init();
-            for (int x = -640; x < level.width + 640; x += 128)
-            {
-                for (int y = -640; y < level.height + 640; y += 128)
+            for (int x = -stride * chunks; x < level.width + stride * chunks; x += stride)
+                for (int y = -stride * chunks; y < level.height + stride * chunks; y += stride)
                 {
                     float newSize = size;
                     if (x >= 0 && y >= 0 && x < level.width && y < level.height)
                         newSize = 0.0f;
-                    t.vertexUV(x, newSize, y + 128, 0.0f, 128);
-                    t.vertexUV(x + 128, newSize, y + 128, 128, 128);
-                    t.vertexUV(x + 128, newSize, y, 128, 0.0f);
-                    t.vertexUV(x, newSize, y, 0.0f, 0.0f);
+                    t.vertexUV(x,          newSize, y + stride, 0.0f,   stride);
+                    t.vertexUV(x + stride, newSize, y + stride, stride, stride);
+                    t.vertexUV(x + stride, newSize, y,          stride, 0.0f);
+                    t.vertexUV(x,          newSize, y,          0.0f,   0.0f);
                 }
-            }
             t.flush();
             GL.BindTexture(TextureTarget.Texture2D, id);
             GL.Color3(0.8f, 0.8f, 0.8f);
             t.init();
-            for (int x = 0; x < level.width; x += 128)
+            for (int x = 0; x < level.width; x += stride)
             {
-                t.vertexUV(x, 0.0f, 0.0f, 0.0f, 0.0f);
-                t.vertexUV(x + 128, 0.0f, 0.0f, 128, 0.0f);
-                t.vertexUV(x + 128, size, 0.0f, 128, size);
-                t.vertexUV(x, size, 0.0f, 0.0f, size);
-                t.vertexUV(x, size, level.height, 0.0f, size);
-                t.vertexUV(x + 128, size, level.height, 128, size);
-                t.vertexUV(x + 128, 0.0f, level.height, 128, 0.0f);
-                t.vertexUV(x, 0.0f, level.height, 0.0f, 0.0f);
+                t.vertexUV(x,          0.0f, 0.0f,         0.0f,   0.0f);
+                t.vertexUV(x + stride, 0.0f, 0.0f,         stride, 0.0f);
+                t.vertexUV(x + stride, size, 0.0f,         stride, size);
+                t.vertexUV(x,          size, 0.0f,         0.0f,   size);
+                t.vertexUV(x,          size, level.height, 0.0f,   size);
+                t.vertexUV(x + stride, size, level.height, stride, size);
+                t.vertexUV(x + stride, 0.0f, level.height, stride, 0.0f);
+                t.vertexUV(x,          0.0f, level.height, 0.0f,   0.0f);
             }
             GL.Color3(0.6f, 0.6f, 0.6f);
-            for (int y = 0; y < level.height; y += 128)
+            for (int y = 0; y < level.height; y += stride)
             {
-                t.vertexUV(0.0f, size, y, 0.0f, 0.0f);
-                t.vertexUV(0.0f, size, y + 128, 128, 0.0f);
-                t.vertexUV(0.0f, 0.0f, y + 128, 128, size);
-                t.vertexUV(0.0f, 0.0f, y, 0.0f, size);
-                t.vertexUV(level.width, 0.0f, y, 0.0f, size);
-                t.vertexUV(level.width, 0.0f, y + 128, 128, size);
-                t.vertexUV(level.width, size, y + 128, 128, 0.0f);
-                t.vertexUV(level.width, size, y, 0.0f, 0.0f);
+                t.vertexUV(0.0f,        size, y,          0.0f,   0.0f);
+                t.vertexUV(0.0f,        size, y + stride, stride, 0.0f);
+                t.vertexUV(0.0f,        0.0f, y + stride, stride, size);
+                t.vertexUV(0.0f,        0.0f, y,          0.0f,   size);
+                t.vertexUV(level.width, 0.0f, y,          0.0f,   size);
+                t.vertexUV(level.width, 0.0f, y + stride, stride, size);
+                t.vertexUV(level.width, size, y + stride, stride, 0.0f);
+                t.vertexUV(level.width, size, y,          0.0f,   0.0f);
             }
             t.flush();
             GL.Disable(EnableCap.Blend);
@@ -145,21 +137,23 @@ namespace MineCS.mccs.level
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
             Tesselator t = Tesselator.instance;
+            int stride = Math.Min(128, Math.Min(level.width, level.height));
+            int chunks = 2048 / stride;
             t.init();
-            for (int x = -640; x < level.width + 640; x += 128)
+            for (int x = -stride * chunks; x < level.width + stride * chunks; x += stride)
             {
-                for (int y = -640; y < level.height + 640; y += 128)
+                for (int y = -stride * chunks; y < level.height + stride * chunks; y += stride)
                 {
                     float newSize = size - 0.1f;
                     if (x >= 0 && y >= 0 && x < level.width && y < level.height) continue;
-                    t.vertexUV(x, newSize, y + 128, 0.0f, 128);
-                    t.vertexUV(x + 128, newSize, y + 128, 128, 128);
-                    t.vertexUV(x + 128, newSize, y, 128, 0.0f);
-                    t.vertexUV(x, newSize, y, 0.0f, 0.0f);
-                    t.vertexUV(x, newSize, y, 0.0f, 0.0f);
-                    t.vertexUV(x + 128, newSize, y, 128, 0.0f);
-                    t.vertexUV(x + 128, newSize, y + 128, 128, 128);
-                    t.vertexUV(x, newSize, y + 128, 0.0f, 128);
+                    t.vertexUV(x,          newSize, y + stride, 0.0f,   stride);
+                    t.vertexUV(x + stride, newSize, y + stride, stride, stride);
+                    t.vertexUV(x + stride, newSize, y,          stride, 0.0f);
+                    t.vertexUV(x,          newSize, y,          0.0f,   0.0f);
+                    t.vertexUV(x,          newSize, y,          0.0f,   0.0f);
+                    t.vertexUV(x + stride, newSize, y,          stride, 0.0f);
+                    t.vertexUV(x + stride, newSize, y + stride, stride, stride);
+                    t.vertexUV(x,          newSize, y + stride, 0.0f,   stride);
                 }
             }
             t.flush();
@@ -167,10 +161,46 @@ namespace MineCS.mccs.level
             GL.Disable(EnableCap.Texture2D);
         }
 
+        public void render(Player player, int layer)
+        {
+            GL.Enable(EnableCap.Texture2D);
+            int id = textures.loadTexture("/terrain.png", 9728);
+            GL.BindTexture(TextureTarget.Texture2D, id);
+            float dx = player.x - x;
+            float dy = player.y - y;
+            float dz = player.z - z;
+            if (dx * dx + dy * dy + dz * dz > 64.0f)
+            {
+                x = player.x;
+                y = player.y;
+                z = player.z;
+            }
+            loadedIndex = 0;
+            if (loaded.Length != chunks.Length)
+                loaded = new int[chunks.Length];
+            Array.Clear(loaded);
+            for (int i = 0; i < chunks.Length; i++)
+            {
+                if (!chunks[i].loaded || chunks[i].empty) continue;
+                float dist = 256 / (1 << renderDistance);
+                if (renderDistance != 0 && !(chunks[i].distanceToSqr(player) < dist * dist)) continue;
+                loaded[loadedIndex++] = chunks[i].getList(layer);
+                if (loadedIndex >= chunks.Length)
+                {
+                    GL.CallLists(chunks.Length, ListNameType.Int, loaded);
+                    loadedIndex = 0;
+                    Array.Clear(loaded);
+                }
+            }
+            if (loadedIndex > 0)
+                GL.CallLists(loadedIndex, ListNameType.Int, loaded);
+            GL.Disable(EnableCap.Texture2D);
+        }
+
         public void pick(Player player, Frustum frustum)
         {
             Tesselator t = Tesselator.instance;
-            float r = 3.0f;
+            float r = 2.5f;
             AABB box = player.bb.grow(r, r, r);
             int x0 = (int)box.x0;
             int x1 = (int)(box.x1 + 1.0f);
@@ -218,6 +248,7 @@ namespace MineCS.mccs.level
         {
             Tesselator t = Tesselator.instance;
             GL.Enable(EnableCap.Blend);
+            GL.Enable(EnableCap.AlphaTest);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.One);
             GL.Color4(1.0f, 1.0f, 1.0f, ((float)Math.Sin(DateTime.UtcNow.Millisecond / 100.0) * 0.2f + 0.4f) * 0.5f);
             if (mode == 0)
@@ -252,6 +283,51 @@ namespace MineCS.mccs.level
                 GL.Disable(EnableCap.Texture2D);
             }
             GL.Disable(EnableCap.Blend);
+            GL.Disable(EnableCap.AlphaTest);
+        }
+
+        public static void renderBorder(HitResult h, int mode)
+        {
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+            GL.Color4(0.0f, 0.0f, 0.0f, 0.4f);
+            int x = h.x;
+            int y = h.y;
+            int z = h.z;
+            if (mode == 1)
+            {
+                if (h.f == 0) y--;
+                if (h.f == 1) y++;
+                if (h.f == 2) z--;
+                if (h.f == 3) z++;
+                if (h.f == 4) x--;
+                if (h.f == 5) x++;
+            }
+            GL.Begin(PrimitiveType.LineStrip);
+            GL.Vertex3(x,        y, z       );
+            GL.Vertex3(x + 1.0f, y, z       );
+            GL.Vertex3(x + 1.0f, y, z + 1.0f);
+            GL.Vertex3(x,        y, z + 1.0f);
+            GL.Vertex3(x,        y, z       );
+            GL.End();
+            GL.Begin(PrimitiveType.LineStrip);
+            GL.Vertex3(x,        y + 1.0f, z       );
+            GL.Vertex3(x + 1.0f, y + 1.0f, z       );
+            GL.Vertex3(x + 1.0f, y + 1.0f, z + 1.0f);
+            GL.Vertex3(x,        y + 1.0f, z + 1.0f);
+            GL.Vertex3(x,        y + 1.0f, z       );
+            GL.End();
+            GL.Begin(PrimitiveType.Lines);
+            GL.Vertex3(x,        y,        z       );
+            GL.Vertex3(x,        y + 1.0f, z       );
+            GL.Vertex3(x + 1.0f, y,        z       );
+            GL.Vertex3(x + 1.0f, y + 1.0f, z       );
+            GL.Vertex3(x + 1.0f, y,        z + 1.0f);
+            GL.Vertex3(x + 1.0f, y + 1.0f, z + 1.0f);
+            GL.Vertex3(x,        y,        z + 1.0f);
+            GL.Vertex3(x,        y + 1.0f, z + 1.0f);
+            GL.End();
+            GL.Disable(EnableCap.Blend);
         }
 
         public List<Chunk> getAllDirtyChunks()
@@ -276,10 +352,12 @@ namespace MineCS.mccs.level
                 publicChunks[i].loaded = frustum.cubeInFrustum(publicChunks[i].aabb);
 
             List<Chunk> dirty = getAllDirtyChunks();
-            if (dirty == null) return;
-            dirty.Sort(new DirtyChunkSorter(player, frustum));
-            for (int i = 0; i < 4 && i < dirty.Count; i++)
-                dirty[i].rebuild();
+            if (dirty != null)
+            {
+                dirty.Sort(new DirtyChunkSorter(player, frustum));
+                for (int i = 0; i < 4 && i < dirty.Count; i++)
+                    dirty[i].rebuild();
+            }
         }
 
         public void setDirty(int x0, int y0, int z0, int x1, int y1, int z1)

@@ -77,6 +77,12 @@ namespace MineCS.mccs.gui
                         color = (color & 0xFCFCFC) >> 2;
                     t.color(color);
                 }
+                else if (chars[i] == '\n')
+                {
+                    y += 10;
+                    xo = 0;
+                    i++;
+                }
                 int ix = chars[i] % 16 * 8;
                 int iy = chars[i] / 16 * 8;
                 t.vertexUV(x + xo,     y + 8, 0.0f, ix       / 128.0f, (iy + 8) / 128.0f);
@@ -91,14 +97,18 @@ namespace MineCS.mccs.gui
 
         public int width(string str)
         {
-            char[] chars = str.ToCharArray();
             int len = 0;
-            for (int i = 0; i < chars.Length; i++)
+            foreach (string line in str.Split('\n'))
             {
-                if (chars[i] == '&')
-                    i++;
-                else
-                    len += charWidths[chars[i]];
+                int tempLen = 0;
+                for (int i = 0; i < line.Length; i++)
+                {
+                    if (line[i] == '&')
+                        i++;
+                    else
+                        tempLen += charWidths[line[i]];
+                }
+                len = Math.Max(len, tempLen);
             }
             return len;
         }

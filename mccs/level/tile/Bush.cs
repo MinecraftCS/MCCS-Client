@@ -18,10 +18,10 @@ namespace MineCS.mccs.level.tile
                 level.setTile(x, y, z, 0);
         }
 
-        public override void render(Tesselator t, Level level, int layer, int x, int y, int z)
+        public override bool render(Tesselator t, Level level, int layer, int x, int y, int z)
         {
             if (level.isLit(x, y, z) ^ layer != 1)
-                return;
+                return false;
             int tex = getTexture(15);
             float u0 = tex % 16 / 16.0f;
             float u1 = u0 + 0.0624375f;
@@ -48,6 +48,7 @@ namespace MineCS.mccs.level.tile
                 t.vertexUV(x0, y0, z0, u1, v1);
                 t.vertexUV(x1, y0, z1, u0, v1);
             }
+            return true;
         }
 
         public override AABB getAABB(int x, int y, int z) => null;

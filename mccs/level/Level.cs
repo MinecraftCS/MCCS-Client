@@ -1,8 +1,5 @@
 ﻿using MineCS.mccs.level.tile;
 using MineCS.mccs.phys;
-using OpenTK.Graphics.OpenGL;
-using System.Diagnostics;
-using System.IO.Compression;
 
 namespace MineCS.mccs.level
 {
@@ -13,182 +10,26 @@ namespace MineCS.mccs.level
         public int width;
         public int height;
         public int depth;
-        private byte[] blockArray;
+        public byte[] blockArray;
         private int[] lightDepths;
         public List<LevelRenderer> levelListeners = new List<LevelRenderer>();
         private Random random = new Random();
         public int tickCheck;
-        private Client client;
+        public string name;
+        public string username;
+        public long creationTime;
         public int tickSpeed = 0;
-        private int[] fluidLevels = new int[0x100000];
 
-        public Level(Client client, int w, int h, int d)
+        public void load(int width, int depth, int height, byte[] blockArray)
         {
-            this.client = client;
-            w = client.width * 240 / client.height;
-            h = client.height * 240 / client.height;
-            GL.Clear(ClearBufferMask.DepthBufferBit);
-            GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadIdentity();
-            GL.Ortho(0.0, w, h, 0.0, 100.0, 300.0);
-            GL.MatrixMode(MatrixMode.Modelview0Ext);
-            GL.LoadIdentity();
-            GL.Translate(0.0f, 0.0f, -200.0f);
-            client.loadingScreen("Loading level", "Reading..");
-            width = 256;
-            height = 256;
-            depth = 64;
-            blockArray = new byte[256 << 8 << 6];
-            lightDepths = new int[256 << 8];
-            bool mapLoaded = loadWorld();
-            if (!mapLoaded)
-                createLevel();
-        }
-
-        public void createLevel()
-        {
-            client.loadingScreen("Generating level", "Raising..");
-            NoiseParams noiseParams = new NoiseParams(width, height, depth);
-            int[] heightmap1 = new NoiseMap(noiseParams.random, 1, true ).read(width, height);
-            int[] heightmap2 = new NoiseMap(noiseParams.random, 0, true ).read(width, height);
-            int[] heightmap3 = new NoiseMap(noiseParams.random, 2, false).read(width, height);
-            int[] heightmap4 = new NoiseMap(noiseParams.random, 4, false).read(width, height);
-            int[] heightmap5 = new NoiseMap(noiseParams.random, 1, true ).read(width, height);
-            blockArray = new byte[width * height * depth];
-            int hDepth = depth / 2;
-            for (int x = 0; x < width; x++)
-                for (int y = 0; y < depth; y++)
-                    for (int z = 0; z < height; z++)
-                    {
-                        int h1 = heightmap1[x + z * width];
-                        int h2 = heightmap2[x + z * width];
-                        int h3 = heightmap3[x + z * width];
-                        int h4 = heightmap4[x + z * width];
-
-                        if (h3 < 128)
-                            h2 = h1;
-
-                        int grassLayer = h1;
-                        if (h2 > grassLayer)
-                            grassLayer = h2;
-
-                        grassLayer = ((grassLayer - 128) / 8) + hDepth - 1;
-                        int stoneLayer = ((heightmap5[x + z * width] - 128) / 6 + hDepth + grassLayer) / 2;
-                        
-                        if (h4 < 92)
-                            grassLayer = grassLayer / 2 * 2;
-                        else if (h4 < 160)
-                            grassLayer = grassLayer / 4 * 4;
-
-                        if (grassLayer < hDepth - 2)
-                            grassLayer = (grassLayer - hDepth) / 2 + hDepth;
-                        if (stoneLayer > grassLayer - 2)
-                            stoneLayer = grassLayer - 2;
-
-                        int tilePos = (y * height + z) * width + x;
-                        int tileId = 0;
-
-                        if (y == grassLayer && y >= hDepth)
-                            tileId = Tile.grass.id;
-                        if (y < grassLayer)
-                            tileId = Tile.dirt.id;
-                        if (y <= stoneLayer)
-                            tileId = Tile.stone.id;
-                        blockArray[tilePos] = (byte)tileId;
-                    }
-            client.loadingScreen("Generating level", "Carving..");
-            int count = width * height * depth / 256 / 64;
-            for (int i = 0; i < count; i++)
-            {
-                float x = random.NextSingle() * width;
-                float y = random.NextSingle() * depth;
-                float z = random.NextSingle() * height;
-                int length = (int)(random.NextSingle() + random.NextSingle() * 150.0f);
-                float dir1 = (float)(random.NextSingle() * Math.PI * 2.0);
-                float dira1 = 0.0f;
-                float dir2 = (float)(random.NextSingle() * Math.PI * 2.0);
-                float dira2 = 0.0f;
-                for (int la = 0; la < length; la++)
-                {
-                    x = (float)(x + Math.Sin(dir1) * Math.Cos(dir2));
-                    z = (float)(z + Math.Cos(dir1) * Math.Cos(dir2));
-                    y = (float)(y + Math.Sin(dir2));
-                    dir1 += dira1 * 0.2f;
-                    dira1 *= 0.9f;
-                    dira1 += random.NextSingle() - random.NextSingle();
-                    dir2 += dira2 * 0.5f;
-                    dir2 *= 0.5f;
-                    dira2 *= 0.9f;
-                    dira2 += random.NextSingle() - random.NextSingle();
-                    float size = (float)(Math.Sin(la * Math.PI / length) * 2.5 + 1.0);
-                    for (int xx = (int)(x - size); xx <= (int)(x + size); xx++)
-                        for (int yy = (int)(y - size); yy <= (int)(y + size); yy++)
-                            for (int zz = (int)(z - size); zz <= (int)(z + size); zz++)
-                            {
-                                int n15 = (yy * height + zz) * width + xx;
-                                if (!(0 < size * size) || xx < 1 || yy < 1 || zz < 1 || xx >= width - 1 || yy >= depth - 1 || zz >= height - 1 || blockArray[n15] != Tile.stone.id) continue;
-                                blockArray[n15] = 0;
-                            }
-                }
-            }
-            client.loadingScreen("Generating level", "Watering..");
-            Stopwatch sw = Stopwatch.StartNew();
-            long floodFilled = 0L;
-            for (int i = 0; i < width; i++)
-            {
-                floodFilled += floodMap(i, depth / 2 - 1, 0,          Tile.water2.id);
-                floodFilled += floodMap(i, depth / 2 - 1, height - 1, Tile.water2.id);
-            }
-            for (int i = 0; i < height; i++)
-            {
-                floodFilled += floodMap(0,         depth / 2 - 1, i, Tile.water2.id);
-                floodFilled += floodMap(width - 1, depth / 2 - 1, i, Tile.water2.id);
-            }
-            sw.Stop();
-            client.loadingScreen("Generating level", "Melting..");
-            int lavaCount = 0;
-            for (int i = 0; i < 400; i++)
-            {
-                int x = random.Next(width);
-                int y = random.Next(depth / 2);
-                int z = random.Next(height);
-                if (getTile(x, y, z) == 0)
-                {
-                    lavaCount++;
-                    floodFilled += floodMap(x, y, z, Tile.lava2.id);
-                }
-            }
-            Console.WriteLine("LavaCount: " + lavaCount);
-            Console.WriteLine("Flood filled " + floodFilled + " tiles in " + sw.ElapsedMilliseconds + " ms");
+            this.width = width;
+            this.height = height;
+            this.depth = depth;
+            this.blockArray = blockArray;
+            lightDepths = new int[width * height];
             loadWorld(0, 0, width, height);
             for (int i = 0; i < levelListeners.Count; i++)
-                levelListeners[i].createOuterChunks();
-        }
-
-        public bool loadWorld()
-        {
-            using (var gz = new GZipStream(new FileStream("level.dat", FileMode.OpenOrCreate), CompressionMode.Decompress))
-            {
-                using (var ms = new MemoryStream())
-                {
-                    gz.CopyTo(ms);
-                    if (ms.Length == 0)
-                        return false;
-                    blockArray = ms.ToArray();
-                }
-            }
-            loadWorld(0, 0, width, height);
-            for (int i = 0; i < levelListeners.Count; i++)
-                levelListeners[i].createOuterChunks();
-            return true;
-        }
-
-        public void save()
-        {
-            GZipStream dos = new GZipStream(new FileStream("level.dat", FileMode.Create), CompressionLevel.Optimal);
-            dos.Write(blockArray);
-            dos.Flush();
-            dos.Dispose();
+                levelListeners[i].loadRenderer();
         }
 
         private void loadWorld(int w0, int h0, int w1, int h1)
@@ -264,7 +105,7 @@ namespace MineCS.mccs.level
             return true;
         }
 
-        public bool checkForTile(int x, int y, int z, int id)
+        public bool tryReplaceTile(int x, int y, int z, int id)
         {
             if (x < 0 || y < 0 || z < 0 || x >= width || y >= depth || z >= height)
                 return false;
@@ -320,100 +161,6 @@ namespace MineCS.mccs.level
                             return true;
                     }
             return false;
-        }
-
-        private long floodMap(int x, int fluidLevel, int z, int id)
-        {
-            List<int> arrayList = new List<int>();
-            int level = 1;
-            int n7 = height - 1;
-            int n8 = width - 1;
-            fluidLevels[0] = ((fluidLevel << 8) + z << 8) + x;
-            long l = 0L;
-            int size = width * height;
-            while (level > 0)
-            {
-                int n9;
-                fluidLevel = fluidLevels[--level];
-                if (level == 0 && arrayList.Count > 0)
-                {
-                    Console.WriteLine("IT HAPPENED!");
-                    arrayList.RemoveAt(arrayList.Count - 1);
-                    fluidLevels = arrayList.ToArray();
-                    level = fluidLevels.Length;
-                }
-                z = fluidLevel >> 8 & n7;
-                int n10 = fluidLevel >> 16;
-                int n11 = n9 = fluidLevel & n8;
-                while (n9 > 0 && blockArray[fluidLevel - 1] == 0)
-                {
-                    --n9;
-                    --fluidLevel;
-                }
-                while (n11 < width && blockArray[fluidLevel + n11 - n9] == 0)
-                    ++n11;
-                int n12 = fluidLevel >> 8 & n7;
-                int n13 = fluidLevel >> 16;
-                if (n12 != z || n13 != n10)
-                    Console.WriteLine("hoooly fuck");
-                bool check1 = false;
-                bool check2 = false;
-                bool check3 = false;
-                l += n11 - n9;
-                while (n9 < n11)
-                {
-                    bool newCheck;
-                    blockArray[fluidLevel] = (byte)id;
-                    if (z > 0)
-                    {
-                        newCheck = blockArray[fluidLevel - width] == 0;
-                        if (newCheck && !check1)
-                        {
-                            if (level == fluidLevels.Length)
-                            {
-                                arrayList.AddRange(fluidLevels);
-                                Array.Clear(fluidLevels);
-                                level = 0;
-                            }
-                            fluidLevels[level++] = fluidLevel - width;
-                        }
-                        check1 = newCheck;
-                    }
-                    if (z < height - 1)
-                    {
-                        newCheck = blockArray[fluidLevel + width] == 0;
-                        if (newCheck && !check2)
-                        {
-                            if (level == fluidLevels.Length)
-                            {
-                                arrayList.AddRange(fluidLevels);
-                                Array.Clear(fluidLevels);
-                                level = 0;
-                            }
-                            fluidLevels[level++] = fluidLevel + width;
-                        }
-                        check2 = newCheck;
-                    }
-                    if (n10 > 0)
-                    {
-                        newCheck = blockArray[fluidLevel - size] == 0;
-                        if (newCheck && !check3)
-                        {
-                            if (level == fluidLevels.Length)
-                            {
-                                arrayList.AddRange(fluidLevels);
-                                Array.Clear(fluidLevels);
-                                level = 0;
-                            }
-                            fluidLevels[level++] = fluidLevel - size;
-                        }
-                        check3 = newCheck;
-                    }
-                    ++fluidLevel;
-                    ++n9;
-                }
-            }
-            return l;
         }
 
         public void tick()

@@ -5,6 +5,8 @@ namespace MineCS.mccs
 {
     public class Player : Entity
     {
+        public bool[] inputs = new bool[10];
+
         public Player(Level level) : base(level)
         {
             heightOffset = 1.62f;
@@ -18,43 +20,50 @@ namespace MineCS.mccs
             bool inWater = base.inWater();
             bool inLava = base.inLava();
 
-            if (Input.KeyDown(Key.R))
-                resetPos();
-            if (Input.KeyDown(Key.Up) || Input.KeyDown(Key.W))
+            if (inputs[0])
                 ya--;
-            if (Input.KeyDown(Key.Down) || Input.KeyDown(Key.S))
+            if (inputs[1])
                 ya++;
-            if (Input.KeyDown(Key.Left) || Input.KeyDown(Key.A))
+            if (inputs[2])
                 xa--;
-            if (Input.KeyDown(Key.Right) || Input.KeyDown(Key.D))
+            if (inputs[3])
                 xa++;
-            if (Input.KeyDown(Key.Space) || Input.KeyDown(Key.LAlt))
+            if (inputs[4])
             {
                 if (inWater)
-                    yd += 0.06f;
+                    yd += 0.04f;
                 else if (inLava)
                     yd += 0.04f;
                 else if (onGround)
-                    yd = 0.5f;
+                {
+                    yd = 0.42f;
+                    inputs[4] = false;
+                }
             }
 
             if (inWater)
             {
+                float oldY = y;
                 moveRelative(xa, ya, 0.02f);
                 move(xd, yd, zd);
-                xd *= 0.7f;
-                yd *= 0.7f;
-                zd *= 0.7f;
+                xd *= 0.8f;
+                yd *= 0.8f;
+                zd *= 0.8f;
                 yd -= 0.02f;
+                if (onWall && aboveThreshold(xd, yd + 0.6f - y + oldY, zd))
+                    yd = 0.3f;
             }
             else if (inLava)
             {
+                float oldY = y;
                 moveRelative(xa, ya, 0.02f);
                 move(xd, yd, zd);
                 xd *= 0.5f;
                 yd *= 0.5f;
                 zd *= 0.5f;
                 yd -= 0.02f;
+                if (onWall && aboveThreshold(xd, yd + 0.6f - y + oldY, zd))
+                    yd = 0.3f;
             }
             else
             {

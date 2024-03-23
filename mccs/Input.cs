@@ -96,8 +96,8 @@ namespace MineCS.mccs
             if (Client.mouseGrabbed)
                 Mouse.SetPosition(mouseCenter.X, mouseCenter.Y);
 
-            MousePos.X = Mouse.GetCursorState().X - rect.Left;
-            MousePos.Y = rect.Height - (Mouse.GetCursorState().Y - rect.Top);
+            MousePos.X = Mouse.GetCursorState().X - rect.Left - 8;
+            MousePos.Y = rect.Height - (Mouse.GetCursorState().Y - rect.Top) - 8;
         }
 
         public static void GrabFix()
@@ -115,6 +115,7 @@ namespace MineCS.mccs
         }
 
         public static Key? GetKey() => keysDown.Count > 0 ? (keysDownLast.Contains(keysDown.Last()) ? null : keysDown.Last()) : null;
+        public static Key[]? GetKeys() => keysDown.Count > 0 ? keysDown.ToArray() : null;
         public static bool KeyPress(Key key) => keysDown.Contains(key) && !keysDownLast.Contains(key);
         public static bool KeyRelease(Key key) => !keysDown.Contains(key) && keysDownLast.Contains(key);
         public static bool KeyDown(Key key) => keysDown.Contains(key);

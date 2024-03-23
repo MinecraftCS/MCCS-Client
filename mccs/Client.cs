@@ -1,6 +1,7 @@
 ﻿using MineCS.mccs.character;
 using MineCS.mccs.gui;
 using MineCS.mccs.level;
+using MineCS.mccs.level.generator;
 using MineCS.mccs.level.tile;
 using MineCS.mccs.particle;
 using MineCS.mccs.phys;
@@ -15,7 +16,7 @@ namespace MineCS.mccs
 {
     public class Client : GameWindow
     {
-        public const string VERSION_STRING = "0.0.12a_03";
+        public const string VERSION_STRING = "0.0.13a_03";
 
         private bool fullscreen = false;
         public int width;
@@ -23,17 +24,24 @@ namespace MineCS.mccs
         private float[] fogColor0 = new float[4];
         private float[] fogColor1 = new float[4];
         private Timer timer = new Timer(20.0f);
-        private Level level;
+        public Level level;
         private LevelRenderer levelRenderer;
         private Player player;
         private int paintTexture = 1;
         private ParticleEngine particleEngine;
+        public Session session = null;
+        public string serverHost;
         private List<Entity> entities = new();
         public volatile bool pause = false;
         private int yMouseAxis = 1;
         public Textures textures = new Textures();
-        private Font font;
+        public Font font;
         private int editMode = 0;
+        private BaseGui gui = null;
+        public LevelOnline levelOnline;
+        private LevelGenerator generator;
+        public string mapUsername = null;
+        public int mapId = 0;
         private volatile bool running = false;
         private string fpsString = string.Empty;
         public static bool mouseGrabbed = false;
@@ -41,11 +49,38 @@ namespace MineCS.mccs
         private int[] selectBuffer = new int[2000];
         private int selectBufferIndex = 0;
         private HitResult hitResult = null;
+        private string loadingHeader = string.Empty;
+        private string loadingText = string.Empty;
 
         public Client(int width, int height, bool fullscreen) : base(width, height, new GraphicsMode(), "MCCS", fullscreen ? GameWindowFlags.Fullscreen : GameWindowFlags.Default)
         {
             this.fullscreen = fullscreen;
             VSync = VSyncMode.Off;
+            levelOnline = new LevelOnline(this);
+            generator = new LevelGenerator(this);
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            GL.Viewport(0, 0, Width, Height);
+            width = Width;
+            height = Height;
+            if (gui != null)
+                gui.loadGui(this, width * 240 / height, height * 240 / height);
+            base.OnResize(e);
+        }
+
+        public void setGui(BaseGui gui)
+        {
+            if (this.gui != null)
+                this.gui.refresh();
+            this.gui = gui;
+            if (gui != null)
+            {
+                int width = this.width * 240 / this.height;
+                int height = this.height * 240 / this.height;
+                gui.loadGui(this, width, height);
+            }
         }
 
         private void checkGlError(string str)
@@ -60,10 +95,16 @@ namespace MineCS.mccs
             }
         }
 
+        private void save()
+        {
+            FileStream writer = new FileStream("level.dat", FileMode.Create);
+            LevelOnline.save(level, ref writer);
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
-            level.save();
+            save();
         }
 
         protected override void OnLoad(EventArgs e)
@@ -108,17 +149,27 @@ namespace MineCS.mccs
             GL.MatrixMode(MatrixMode.Modelview);
             checkGlError("Startup");
             font = new Font("/default.gif", textures);
+            int[] buffer = new int[256];
             GL.Viewport(0, 0, width, height);
-            level = new Level(this, 256, 256, 64);
+            level = new Level();
+            bool online = false;
+            if (mapUsername != null)
+                online = loadLevel(mapUsername, mapId);
+            else
+            {
+                FileStream reader = new FileStream("level.dat", FileMode.OpenOrCreate);
+                online = levelOnline.load(level, reader);
+                if (!online)
+                    online = levelOnline.loadOld(level, reader);
+            }
+            if (!online)
+            {
+                string username = session != null ? session.username : "anonymous";
+                generator.loadWorld(level, username, 256, 256, 64);
+            }
             levelRenderer = new LevelRenderer(level, textures);
             player = new Player(level);
             particleEngine = new ParticleEngine(textures);
-            for (int i = 0; i < 10; i++)
-            {
-                Zombie zombie = new Zombie(level, textures, 128.0f, 0.0f, 128.0f);
-                zombie.resetPos();
-                entities.Add(zombie);
-            }
             Input.Initialize(this);
             CursorVisible = false;
             mouseGrabbed = true;
@@ -162,69 +213,81 @@ namespace MineCS.mccs
         public void grabMouse()
         {
             mouseGrabbed = true;
+            setGui(null!);
         }
 
         public void releaseMouse()
         {
             mouseGrabbed = false;
+            setGui(new PauseMenu());
         }
 
-        private void handleMouseClick()
+        private void handleMouse()
         {
-            if (editMode == 0 && hitResult != null)
+            if (!mouseGrabbed) return;
+            if (Input.MousePress(MouseButton.Left))
             {
-                Tile oldTile = Tile.tiles[level.getTile(hitResult.x, hitResult.y, hitResult.z)];
-                bool changed = level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
-                if (oldTile != null && changed)
-                    oldTile.destroy(level, hitResult.x, hitResult.y, hitResult.z, particleEngine);
+                if (editMode == 0 && hitResult != null)
+                {
+                    Tile oldTile = Tile.tiles[level.getTile(hitResult.x, hitResult.y, hitResult.z)];
+                    bool changed = level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
+                    if (oldTile != null && changed)
+                        oldTile.destroy(level, hitResult.x, hitResult.y, hitResult.z, particleEngine);
+                }
+                else if (hitResult != null)
+                {
+                    AABB aabb;
+                    int x = hitResult.x;
+                    int y = hitResult.y;
+                    int z = hitResult.z;
+                    if (hitResult.f == 0) y--;
+                    if (hitResult.f == 1) y++;
+                    if (hitResult.f == 2) z--;
+                    if (hitResult.f == 3) z++;
+                    if (hitResult.f == 4) x--;
+                    if (hitResult.f == 5) x++;
+                    if ((aabb = Tile.tiles[paintTexture].getAABB(x, y, z)) == null || isFree(aabb))
+                        level.setTile(x, y, z, paintTexture);
+                }
             }
-            else if (hitResult != null)
-            {
-                int x = hitResult.x;
-                int y = hitResult.y;
-                int z = hitResult.z;
-                if (hitResult.f == 0)
-                    y--;
-                if (hitResult.f == 1)
-                    y++;
-                if (hitResult.f == 2)
-                    z--;
-                if (hitResult.f == 3)
-                    z++;
-                if (hitResult.f == 4)
-                    x--;
-                if (hitResult.f == 5)
-                    x++;
-                AABB aabb = Tile.tiles[paintTexture].getAABB(x, y, z);
-                if (aabb == null || isFree(aabb))
-                    level.setTile(x, y, z, paintTexture);
-            }
+            else if (Input.MousePress(MouseButton.Right))
+                editMode = ++editMode % 2;
         }
 
-        protected override void OnResize(EventArgs e)
+        private void handleKeyboard()
         {
-            GL.Viewport(0, 0, Width, Height);
-            width = Width;
-            height = Height;
-            base.OnResize(e);
-        }
+            if (!mouseGrabbed) return;
+            if (Input.KeyPress(Key.Up) || Input.KeyPress(Key.W))
+                player.inputs[0] = true;
+            else if (Input.KeyRelease(Key.Up) || Input.KeyRelease(Key.W))
+                player.inputs[0] = false;
 
-        public void tick()
-        {
-            if (!mouseGrabbed && Input.MousePress(MouseButton.Left))
-                grabMouse();
-            else
-            {
-                if (Input.MousePress(MouseButton.Left))
-                    handleMouseClick();
-                else if (Input.MousePress(MouseButton.Right))
-                    editMode = ++editMode % 2;
-            }
+            if (Input.KeyPress(Key.Down) || Input.KeyPress(Key.S))
+                player.inputs[1] = true;
+            else if (Input.KeyRelease(Key.Down) || Input.KeyRelease(Key.S))
+                player.inputs[1] = false;
+
+            if (Input.KeyPress(Key.Left) || Input.KeyPress(Key.A))
+                player.inputs[2] = true;
+            else if (Input.KeyRelease(Key.Left) || Input.KeyRelease(Key.A))
+                player.inputs[2] = false;
+
+            if (Input.KeyPress(Key.Right) || Input.KeyPress(Key.D))
+                player.inputs[3] = true;
+            else if (Input.KeyRelease(Key.Right) || Input.KeyRelease(Key.D))
+                player.inputs[3] = false;
+
+            if (Input.KeyPress(Key.Space) || Input.KeyPress(Key.LAlt))
+                player.inputs[4] = true;
+            else if (Input.KeyRelease(Key.Space) || Input.KeyRelease(Key.LAlt))
+                player.inputs[4] = false;
 
             if (Input.KeyPress(Key.Escape) && !fullscreen)
                 releaseMouse();
             if (Input.KeyPress(Key.Enter))
-                level.save();
+                save();
+            if (Input.KeyPress(Key.R))
+                player.resetPos();
             if (Input.KeyPress(Key.Number1))
                 paintTexture = 1;
             if (Input.KeyPress(Key.Number2))
@@ -239,14 +302,19 @@ namespace MineCS.mccs
                 yMouseAxis *= -1;
             if (Input.KeyPress(Key.G))
                 entities.Add(new Zombie(level, textures, player.x, player.y, player.z));
-            if (Input.KeyPress(Key.N))
-            {
-                level.createLevel();
-                player.resetPos();
-                entities.Clear();
-            }
             if (Input.KeyPress(Key.F))
                 levelRenderer.renderDistance = ++levelRenderer.renderDistance % 4;
+        }
+
+        public void tick()
+        {
+            handleMouse();
+            handleKeyboard();
+
+            if (gui != null)
+                gui.checkInputs();
+            if (gui != null)
+                gui.advanceTime();
 
             level.tick();
             particleEngine.tick();
@@ -285,7 +353,7 @@ namespace MineCS.mccs
         {
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            Glu.Perspective(70.0f, (float)width / height, 0.05f, 1000.0f);
+            Glu.Perspective(70.0f, (float)width / height, 0.05f, 1024.0f);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             moveCameraToPlayer(deltaTime);
@@ -309,7 +377,7 @@ namespace MineCS.mccs
             GL.GetInteger(GetIndexedPName.Viewport, 0, viewportBuffer);
             Array.Resize(ref viewportBuffer, 16);
             Glu.PickMatrix(x, y, 5.0f, 5.0f, viewportBuffer);
-            Glu.Perspective(70.0f, (float)width / height, 0.05f, 1000.0f);
+            Glu.Perspective(70.0f, (float)width / height, 0.05f, 1024.0f);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             moveCameraToPlayer(deltaTime);
@@ -333,7 +401,7 @@ namespace MineCS.mccs
                 for (int j = 0; j < nameCount; j++)
                     names[j] = selectBuffer[selectBufferIndex++];
                 HitResult hR = new HitResult(names[0], names[1], names[2], names[3], names[4]);
-                if (hitResult != null && hR.distanceFromBlock(player, editMode) >= hitResult.distanceFromBlock(player, editMode))
+                if (hitResult != null && hR.distanceFromBlock(player, 0) >= hitResult.distanceFromBlock(player, 0) ? hR.distanceFromBlock(player, editMode) >= hitResult.distanceFromBlock(player, editMode) : false)
                     continue;
                 hitResult = hR;
             }
@@ -377,23 +445,35 @@ namespace MineCS.mccs
                     entities[i].render(deltaTime);
             particleEngine.render(player, deltaTime, 1);
             GL.CallList(levelRenderer.listIndex);
+            if (hitResult != null)
+            {
+                GL.Disable(EnableCap.Lighting);
+                GL.Disable(EnableCap.AlphaTest);
+                levelRenderer.renderHit(player, hitResult, editMode, paintTexture);
+                LevelRenderer.renderBorder(hitResult, editMode);
+                GL.Enable(EnableCap.AlphaTest);
+                GL.Enable(EnableCap.Lighting);
+            }
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
             setupFog(0);
             GL.CallList(levelRenderer.listIndex + 1);
             GL.Enable(EnableCap.Blend);
-            GL.DepthMask(false);
+            GL.ColorMask(false, false, false, false);
             levelRenderer.render(player, 2);
-            GL.DepthMask(true);
+            GL.ColorMask(true, true, true, true);
+            levelRenderer.render(player, 2);
             GL.Disable(EnableCap.Blend);
             GL.Disable(EnableCap.Lighting);
             GL.Disable(EnableCap.Texture2D);
             GL.Disable(EnableCap.Fog);
-            checkGlError("Rendered rest");
             if (hitResult != null)
             {
+                GL.DepthFunc(DepthFunction.Less);
                 GL.Disable(EnableCap.AlphaTest);
                 levelRenderer.renderHit(player, hitResult, editMode, paintTexture);
+                LevelRenderer.renderBorder(hitResult, editMode);
                 GL.Enable(EnableCap.AlphaTest);
+                GL.DepthFunc(DepthFunction.Lequal);
             }
             checkGlError("Rendered hit");
             drawGui(deltaTime);
@@ -410,13 +490,13 @@ namespace MineCS.mccs
             setupOrthoCamera(screenWidth, screenHeight);
             checkGlError("GUI: Init");
             GL.PushMatrix();
-            GL.Translate(screenWidth - 16.0f, 16.0f, 0.0f);
+            GL.Translate(screenWidth - 16, 16.0f, -50.0f);
             Tesselator t = Tesselator.instance;
             GL.Scale(16.0f, 16.0f, 16.0f);
-            GL.Rotate(30.0f, 1.0f, 0.0f, 0.0f);
+            GL.Rotate(-30.0f, 1.0f, 0.0f, 0.0f);
             GL.Rotate(45.0f, 0.0f, 1.0f, 0.0f);
-            GL.Translate(-1.5f, 0.5f, -0.5f);
-            GL.Scale(-1.0f, -1.0f, 1.0);
+            GL.Translate(-1.5f, 0.5f, 0.5f);
+            GL.Scale(-1.0f, -1.0f, -1.0);
             int id = textures.loadTexture("/terrain.png", 9728);
             GL.BindTexture(TextureTarget.Texture2D, id);
             GL.Enable(EnableCap.Texture2D);
@@ -434,32 +514,36 @@ namespace MineCS.mccs
             GL.Color4(1.0f, 1.0f, 1.0f, 1.0f);
             t.init();
             t.vertex(wc + 1, hc - 4, 0.0f);
-            t.vertex(wc, hc - 4, 0.0f);
-            t.vertex(wc, hc + 5, 0.0f);
+            t.vertex(wc,     hc - 4, 0.0f);
+            t.vertex(wc,     hc + 5, 0.0f);
             t.vertex(wc + 1, hc + 5, 0.0f);
-            t.vertex(wc + 5, hc, 0.0f);
-            t.vertex(wc - 4, hc, 0.0f);
+            t.vertex(wc + 5, hc,     0.0f);
+            t.vertex(wc - 4, hc,     0.0f);
             t.vertex(wc - 4, hc + 1, 0.0f);
             t.vertex(wc + 5, hc + 1, 0.0f);
             t.flush();
             checkGlError("GUI: Draw crosshair");
+
+            if (gui != null)
+                gui.render((int)(Input.MousePos.X / width * screenWidth),
+                           (int)((height - Input.MousePos.Y) / height * screenHeight));
         }
 
         private void setupFog(int i)
         {
-            Tile tile = Tile.tiles[level.getTile((int)player.x, (int)player.y, (int)player.z)];
+            Tile tile = Tile.tiles[level.getTile((int)player.x, (int)(player.y + 0.12f), (int)player.z)];
             if (tile != null && tile.getType() == 1)
             {
                 GL.Fog(FogParameter.FogMode, 2048);
                 GL.Fog(FogParameter.FogDensity, 0.1f);
                 GL.Fog(FogParameter.FogColor, getBuffer(0.02f, 0.02f, 0.2f, 1.0f));
-                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(0.3f, 0.3f, 0.5f, 1.0f));
+                GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(0.3f, 0.3f, 0.7f, 1.0f));
             }
             else if (tile != null && tile.getType() == 2)
             {
                 GL.Fog(FogParameter.FogMode, 2048);
-                GL.Fog(FogParameter.FogDensity, 0.2f);
-                GL.Fog(FogParameter.FogColor, getBuffer(0.5f, 0.3f, 0.0f, 1.0f));
+                GL.Fog(FogParameter.FogDensity, 2.0f);
+                GL.Fog(FogParameter.FogColor, getBuffer(0.6f, 0.1f, 0.0f, 1.0f));
                 GL.LightModel(LightModelParameter.LightModelAmbient, getBuffer(0.4f, 0.3f, 0.3f, 1.0f));
             }
             else if (i == 0)
@@ -486,7 +570,21 @@ namespace MineCS.mccs
             return new float[] { a, b, c, d };
         }
 
-        public void loadingScreen(string message, string subMessage)
+        public void loadingScreenHeader(string text)
+        {
+            loadingHeader = text;
+            int screenWidth = width * 240 / height;
+            int screenHeight = height * 240 / height;
+            setupOrthoCamera(screenWidth, screenHeight);
+        }
+
+        public void loadingScreen(string text)
+        {
+            loadingText = text;
+            loadingScreen(-1);
+        }
+
+        public void loadingScreen(int progress)
         {
             int screenWidth = width * 240 / height;
             int screenHeight = height * 240 / height;
@@ -496,16 +594,53 @@ namespace MineCS.mccs
             int id = textures.loadTexture("/dirt.png", 9728);
             GL.BindTexture(TextureTarget.Texture2D, id);
             t.init();
-            t.color(0x808080);
-            t.vertexUV(0.0f, screenHeight, 0.0f, 0.0f, screenHeight / 32.0f);
+            t.color(0x404040);
+            t.vertexUV(0.0f,        screenHeight, 0.0f, 0.0f,                screenHeight / 32.0f);
             t.vertexUV(screenWidth, screenHeight, 0.0f, screenWidth / 32.0f, screenHeight / 32.0f);
-            t.vertexUV(screenWidth, 0.0f, 0.0f, screenWidth / 32.0f, 0.0f);
-            t.vertexUV(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+            t.vertexUV(screenWidth, 0.0f,         0.0f, screenWidth / 32.0f, 0.0f);
+            t.vertexUV(0.0f,        0.0f,         0.0f, 0.0f,                0.0f);
             t.flush();
-            GL.Enable(EnableCap.Texture2D);
-            font.drawShadow(message, (screenWidth - font.width(message)) / 2, screenHeight / 2 + 4, 0xFFFFFF);
-            font.drawShadow(subMessage, (screenWidth - font.width(subMessage)) / 2, screenHeight / 2 - 8, 0xFFFFFF);
+            if (progress >= 0)
+            {
+                int x = screenWidth / 2 - 50;
+                int y = screenHeight / 2 + 16;
+                GL.Disable(EnableCap.Texture2D);
+                t.init();
+                t.color(0x808080);
+                t.vertex(x,       y,     0.0f);
+                t.vertex(x,       y + 2, 0.0f);
+                t.vertex(x + 100, y + 2, 0.0f);
+                t.vertex(x + 100, y,     0.0f);
+                t.color(0x80FF80);
+                t.vertex(x,            y,     0.0f);
+                t.vertex(x,            y + 2, 0.0f);
+                t.vertex(x + progress, y + 2, 0.0f);
+                t.vertex(x + progress, y,     0.0f);
+                t.flush();
+                GL.Enable(EnableCap.Texture2D);
+            }
+            font.drawShadow(loadingHeader, (screenWidth - font.width(loadingHeader)) / 2, screenHeight / 2 - 20, 0xFFFFFF);
+            font.drawShadow(loadingText, (screenWidth - font.width(loadingText)) / 2, screenHeight / 2 + 4, 0xFFFFFF);
             Context.SwapBuffers();
+        }
+
+        public void generateWorld()
+        {
+            string text = session != null ? session.username : "anonymous";
+            generator.loadWorld(level, text, 256, 256, 64);
+            player.resetPos();
+            entities.Clear();
+        }
+
+        public bool loadLevel(string username, int worldId)
+        {
+            bool fullscreen = levelOnline.loadLevelOnline(level, serverHost, username, worldId);
+            if (!fullscreen) return false;
+            if (player != null)
+                player.resetPos();
+            if (entities != null)
+                entities.Clear();
+            return true;
         }
     }
 }

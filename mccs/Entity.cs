@@ -1,4 +1,5 @@
 ﻿using MineCS.mccs.level;
+using MineCS.mccs.level.tile;
 using MineCS.mccs.phys;
 using OpenTK.Input;
 
@@ -20,6 +21,7 @@ namespace MineCS.mccs
         public float yRot;
         public AABB bb;
         public bool onGround = false;
+        public bool onWall = false;
         public bool removed = false;
         protected float heightOffset = 0.0f;
         protected float bbWidth = 0.6f;
@@ -34,9 +36,9 @@ namespace MineCS.mccs
         public void resetPos()
         {
             Random rnd = new Random();
-            float x = rnd.NextSingle() * level.width;
+            float x = rnd.NextSingle() * (level.width - 2) + 1.0f;
             float y = level.depth + 10;
-            float z = rnd.NextSingle() * level.height;
+            float z = rnd.NextSingle() * (level.height - 2) + 1.0f;
             setPos(x, y, z);
         }
 
@@ -73,6 +75,42 @@ namespace MineCS.mccs
             zo = z;
         }
 
+        public bool aboveThreshold(float x, float y, float z)
+        {
+            float f5 = z;
+            z = y;
+            y = x;
+            AABB hb = new AABB(bb.x0 + f5, bb.y0 + z, bb.z0 + f5, bb.x1 + y, bb.y1 + z, bb.z1 + f5);
+            if (level.getCubes(bb).Count > 0)
+                return false;
+            int n = (int)Math.Floor(hb.x0);
+            int n2 = (int)Math.Floor(hb.x1 + 1.0f);
+            int n3 = (int)Math.Floor(hb.y0);
+            int n4 = (int)Math.Floor(hb.y1 + 1.0f);
+            int n5 = (int)Math.Floor(hb.z0);
+            int n6 = (int)Math.Floor(hb.z1 + 1.0f);
+            if (n < 0) n = 0;
+            if (n3 < 0) n3 = 0;
+            if (n5 < 0) n5 = 0;
+            if (n2 > level.width) n2 = level.width;
+            if (n4 > level.depth) n4 = level.depth;
+            if (n6 > level.height) n6 = level.height;
+            while (n < n2)
+            {
+                for (int i = n3; i < n4; ++i)
+                {
+                    for (int j = n5; j < n6; ++j)
+                    {
+                        Tile a2 = Tile.tiles[level.getTile(n, i, j)];
+                        if (a2 != null && a2.getType() > 0)
+                            return false;
+                    }
+                }
+                ++n;
+            }
+            return true;
+        }
+
         public void move(float xa, float ya, float za)
         {
             float xaOrg = xa;
@@ -92,6 +130,7 @@ namespace MineCS.mccs
                 za = aABBs[i].clipZCollide(bb, za);
             bb.move(0.0f, 0.0f, za);
 
+            onWall = xaOrg != xa || zaOrg != za;
             onGround = yaOrg != ya && yaOrg < 0.0f;
 
             if (xaOrg != xa)
@@ -106,7 +145,7 @@ namespace MineCS.mccs
             z = (bb.z0 + bb.z1) / 2.0f;
         }
 
-        public bool inWater() => level.isTileInRange(bb, 1);
+        public bool inWater() => level.isTileInRange(bb.grow(0.0f, -0.4f, 0.0f), 1);
         public bool inLava() => level.isTileInRange(bb, 2);
         public void remove() => removed = true;
 

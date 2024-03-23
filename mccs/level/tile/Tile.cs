@@ -16,9 +16,9 @@ namespace MineCS.mccs.level.tile
         public static Tile sapling = new Bush(6);
         public static Tile bedrock = new Tile(7, 17);
         public static Tile water = new Liquid(8, 1);
-        public static Tile water2 = new Liquid2(9, 1);
+        public static Tile waterSpreadable = new LiquidSpreadable(9, 1);
         public static Tile lava = new Liquid(10, 2);
-        public static Tile lava2 = new Liquid2(11, 2);
+        public static Tile lavaSpreadable = new LiquidSpreadable(11, 2);
         public int tex;
         public int id;
         private float x0;
@@ -55,37 +55,57 @@ namespace MineCS.mccs.level.tile
             this.tex = tex;
         }
 
-        public virtual void render(Tesselator t, Level level, int layer, int x, int y, int z)
+        public virtual bool render(Tesselator t, Level level, int layer, int x, int y, int z)
         {
+            bool rendered = false;
+
             t.color(254, 254, 254);
-            if (shouldRenderFace(level, x, y - 1, z, layer))
+            if (shouldRenderFace(level, x, y - 1, z, layer, 0))
+            {
                 renderFace(t, x, y, z, 0);
-            if (shouldRenderFace(level, x, y + 1, z, layer))
+                rendered = true;
+            }
+            if (shouldRenderFace(level, x, y + 1, z, layer, 1))
+            {
                 renderFace(t, x, y, z, 1);
+                rendered = true;
+            }
 
             t.color(203, 203, 203);
-            if (shouldRenderFace(level, x, y, z - 1, layer))
+            if (shouldRenderFace(level, x, y, z - 1, layer, 2))
+            {
                 renderFace(t, x, y, z, 2);
-            if (shouldRenderFace(level, x, y, z + 1, layer))
+                rendered = true;
+            }
+            if (shouldRenderFace(level, x, y, z + 1, layer, 3))
+            {
                 renderFace(t, x, y, z, 3);
+                rendered = true;
+            }
 
             t.color(152, 152, 152);
-            if (shouldRenderFace(level, x - 1, y, z, layer))
+            if (shouldRenderFace(level, x - 1, y, z, layer, 4))
+            {
                 renderFace(t, x, y, z, 4);
-            if (shouldRenderFace(level, x + 1, y, z, layer))
+                rendered = true;
+            }
+            if (shouldRenderFace(level, x + 1, y, z, layer, 5))
+            {
                 renderFace(t, x, y, z, 5);
+                rendered = true;
+            }
+
+            return rendered;
         }
 
-        public virtual bool shouldRenderFace(Level level, int x, int y, int z, int layer)
+        public virtual bool shouldRenderFace(Level level, int x, int y, int z, int layer, int face)
         {
-            if (x < 0 || y < 0 || z < 0 || x >= level.width || y >= level.depth || z >= level.height)
-                return false;
-            bool check = true;
-            if (layer == 2)
-                return false;
+            bool shouldRender = true;
+            if (layer == 2) return false;
             if (layer >= 0)
-                check = level.isLit(x, y, z) ^ layer == 1;
-            return !(tiles[level.getTile(x, y, z)] == null ? false : tiles[level.getTile(x, y, z)].isSolid()) && check;
+                shouldRender = level.isLit(x, y, z) ^ layer == 1;
+            Tile tile = tiles[level.getTile(x, y, z)];
+            return !(tile == null ? false : tile.isSolid()) && shouldRender;
         }
 
         protected virtual int getTexture(int face) => tex;

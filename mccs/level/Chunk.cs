@@ -22,6 +22,8 @@ namespace MineCS.mccs.level
         private int lists = -1;
         public long dirtiedTime = 0L;
         public bool loaded;
+        public bool empty;
+        private static Tesselator t = Tesselator.instance;
         public static int updates = 0;
 
         public Chunk(Level level, int x0, int y0, int z0, int x1, int y1, int z1)
@@ -43,26 +45,25 @@ namespace MineCS.mccs.level
         private void rebuild(int layer)
         {
             GL.NewList(lists + layer, ListMode.Compile);
-            Tesselator t = Tesselator.instance;
             t.init();
-            int tiles = 0;
+            bool notEmpty = false;
             for (int x = x0; x < x1; x++)
                 for (int y = y0; y < y1; y++)
                     for (int z = z0; z < z1; z++)
                     {
                         int tileId = level.getTile(x, y, z);
                         if (tileId > 0)
-                        {
-                            Tile.tiles[tileId].render(t, level, layer, x, y, z);
-                            tiles++;
-                        }
+                            notEmpty |= Tile.tiles[tileId].render(t, level, layer, x, y, z);
                     }
+            if (notEmpty)
+                empty = false;
             t.flush();
             GL.EndList();
         }
 
         public void rebuild()
         {
+            empty = true;
             updates++;
             rebuild(0);
             rebuild(1);
@@ -70,9 +71,9 @@ namespace MineCS.mccs.level
             dirty = false;
         }
 
-        public void render(int layer)
+        public int getList(int layer)
         {
-            GL.CallList(lists + layer);
+            return lists + layer;
         }
 
         public void setDirty()
@@ -100,6 +101,11 @@ namespace MineCS.mccs.level
                 GL.NewList(lists + i, ListMode.Compile);
                 GL.EndList();
             }
+        }
+
+        public void delete()
+        {
+            GL.DeleteLists(lists, 3);
         }
     }
 }
